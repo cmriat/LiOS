@@ -37,7 +37,7 @@ import threading
 from dataclasses import dataclass
 from typing import Optional
 
-from flask import Blueprint, Flask, Response, current_app, jsonify
+from flask import Blueprint, Flask, Response, current_app, jsonify, request
 
 try:
     # Optional import; only needed for type hints and packing
@@ -87,6 +87,35 @@ class InferenceBufferProvider:
             return self._buf is not None
 
 
+def _latest_jpeg(provider: "InferenceBufferProvider", cam: Optional[str], quality: int = 80) -> Optional[bytes]:
+    """
+    Encode the latest frame of one stream as JPEG bytes (None if unavailable).
+
+    Reads from the live buffer's `images` dict (HWC uint8 RGB tensors). Pillow
+    and torch are imported lazily so the base server stays light.
+    """
+    buf = provider.get_buffer()
+    images = getattr(buf, "images", None) or {}
+    if not images:
+        return None
+    tensor = images.get(cam) if cam else next(iter(images.values()))
+    if tensor is None:
+        return None
+    # Snapshot to CPU under the buffer lock to avoid reading a half-written frame.
+    try:
+        with buf.hold_lock(timeout=1.0):
+            arr = tensor.detach().to("cpu").numpy().copy()
+    except Exception:
+        arr = tensor.detach().to("cpu").numpy().copy()
+    import io
+
+    from PIL import Image
+
+    bio = io.BytesIO()
+    Image.fromarray(arr).save(bio, format="JPEG", quality=quality)
+    return bio.getvalue()
+
+
 def _create_app(provider: InferenceBufferProvider) -> Flask:
     app = Flask(__name__)
     app.config["provider"] = provider
@@ -114,6 +143,39 @@ def _create_app(provider: InferenceBufferProvider) -> Flask:
         # Keep body as raw base64 string for simple client usage.
         return Response(s, mimetype="text/plain; charset=utf-8")
 
+    @api.get("/preview.jpg")
+    def preview_jpg() -> Response:
+        """Latest frame as a single JPEG. `?cam=<name>` selects a stream."""
+        prov: InferenceBufferProvider = current_app.config["provider"]
+        data = _latest_jpeg(prov, request.args.get("cam"))
+        if data is None:
+            return Response("no frame", status=404, mimetype="text/plain")
+        return Response(data, mimetype="image/jpeg")
+
+    @api.get("/preview")
+    def preview_stream() -> Response:
+        """
+        Live MJPEG stream — open in a browser to watch in real time.
+
+        Query: `?cam=<name>` selects a stream, `?fps=<n>` caps the rate (default 10).
+        """
+        prov: InferenceBufferProvider = current_app.config["provider"]
+        cam = request.args.get("cam")
+        try:
+            fps = max(1.0, float(request.args.get("fps", "10")))
+        except ValueError:
+            fps = 10.0
+
+        def gen():
+            import time
+            while True:
+                data = _latest_jpeg(prov, cam)
+                if data is not None:
+                    yield b"--frame\r\nContent-Type: image/jpeg\r\n\r\n" + data + b"\r\n"
+                time.sleep(1.0 / fps)
+
+        return Response(gen(), mimetype="multipart/x-mixed-replace; boundary=frame")
+
     app.register_blueprint(api)
     return app
 
@@ -127,7 +189,8 @@ class _ServerThread(threading.Thread):
 
     def __init__(self, app: Flask, host: str, port: int) -> None:
         super().__init__(daemon=True)
-        self._server = make_server(host, port, app)
+        # threaded=True so a long-lived MJPEG stream doesn't block other requests.
+        self._server = make_server(host, port, app, threaded=True)
         self._ctx = app.app_context()
         self._shutdown = threading.Event()
 
