@@ -6,18 +6,18 @@ Quick start:
 
 ```
 pixi install
-./e2e/smoke.sh
+./tests/e2e/smoke.sh
 ```
 
 What it does:
 - Starts `signal-server` via `go run . serve --addr :18080`.
-- Runs `receiver.py` headlessly and `sender.py` via `pixi run`.
+- Runs `receiver.py` and `sender_sw.py` (software x264enc) headlessly via `pixi run`.
 - Watches logs for successful WebRTC link/answer.
-- Writes a JSON report to `e2e/report.json` and exits non-zero on failure.
+- Writes a JSON report to `tests/e2e/report.json` and exits non-zero on failure.
 
 Artifacts:
-- Logs: `e2e/logs/{signal,receiver,sender}.log`
-- Report: `e2e/report.json`
+- Logs: `tests/e2e/logs/{signal,receiver,sender}.log`
+- Report: `tests/e2e/report.json`
 
 Environment:
 - `TIMEOUT_SEC` (optional): overall wait timeout (default 25).
@@ -32,20 +32,20 @@ Run:
 
 ```
 pixi install
-./e2e/gpu_sink.sh
+./tests/e2e/gpu_sink.sh
 ```
 
 What it does:
 - Starts the Go signaling server on `:18080`.
 - Runs `gpu_sink_save.py` as the receiver to pull NumPy frames and save PNGs.
-- Runs `sender.py` to produce an H264 RTP stream.
+- Runs `sender_sw.py` to produce an H264 RTP stream.
 - Waits until the requested number of frames are saved, then verifies images using PIL.
-- Writes a JSON report to `e2e/gpu_sink_report.json`.
+- Writes a JSON report to `tests/e2e/gpu_sink_report.json`.
 
 Artifacts:
-- Saved frames: `e2e/artifacts/gpu_frames/*.png`
-- Logs: `e2e/logs/{signal_gpu,gpu_sink_receiver,gpu_sink_sender}.log`
-- Report: `e2e/gpu_sink_report.json`
+- Saved frames: `tests/e2e/artifacts/gpu_frames/*.png`
+- Logs: `tests/e2e/logs/{signal_gpu,gpu_sink_receiver,gpu_sink_sender}.log`
+- Report: `tests/e2e/gpu_sink_report.json`
 
 Environment:
 - `FRAMES` (optional): number of frames to save (default 5)

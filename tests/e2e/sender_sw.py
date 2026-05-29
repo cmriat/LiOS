@@ -4,24 +4,10 @@
 Use x264enc (CPU) to avoid GPU dependency during CI/E2E runs.
 
 Run:
-  ROOM=demo SIGNAL_URL=ws://127.0.0.1:18080/ws pixi run python e2e/sender_sw.py
+  ROOM=demo SIGNAL_URL=ws://127.0.0.1:18080/ws pixi run python tests/e2e/sender_sw.py
 """
 
 import asyncio
-import pathlib
-import sys
-
-import gi
-
-gi.require_version("Gst", "1.0")
-gi.require_version("GstWebRTC", "1.0")
-gi.require_version("GstSdp", "1.0")
-from gi.repository import Gst  # type: ignore  # noqa: F401
-
-# Ensure project root on sys.path when running from e2e/
-ROOT = pathlib.Path(__file__).resolve().parents[1]
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
 
 from gst_webrtc import init_gst
 from gst_webrtc.sender import WebRTCSender

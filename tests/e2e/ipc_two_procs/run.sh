@@ -11,7 +11,7 @@ cleanup() {
   [[ -p "$workdir/w_out" ]] && rm -f "$workdir/w_out"
   [[ -p "$workdir/r_in" ]] && rm -f "$workdir/r_in"
   [[ -p "$workdir/r_out" ]] && rm -f "$workdir/r_out"
-  [[ -f "$workdir" ]] && rm -rf "$workdir" || true
+  [[ -d "$workdir" ]] && rm -rf "$workdir" || true
 }
 trap cleanup EXIT
 

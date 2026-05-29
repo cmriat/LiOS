@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Minimal end-to-end smoke test orchestrator
 # - Starts Go signal server on :18080
-# - Runs Python receiver.py (headless) and sender.py via pixi
+# - Runs Python receiver.py and sender_sw.py (software x264enc) via pixi
 # - Watches logs for success patterns
 # - Writes e2e/report.json and exits non-zero on failure
 
@@ -9,7 +9,7 @@ set -Eeuo pipefail
 IFS=$'\n\t'
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
-E2E_DIR="$ROOT_DIR/e2e"
+E2E_DIR="$ROOT_DIR/tests/e2e"
 LOG_DIR="$E2E_DIR/logs"
 REPORT_JSON="$E2E_DIR/report.json"
 
@@ -72,7 +72,7 @@ echo "[e2e] signal-server is up (pid=$server_pid)"
 echo "[e2e] starting receiver.py (headless)"
 (
   cd "$ROOT_DIR"
-  ROOM="$ROOM" SIGNAL_URL="$SIGNAL_URL" E2E_HEADLESS=1 PYTHONUNBUFFERED=1 \
+  ROOM="$ROOM" SIGNAL_URL="$SIGNAL_URL" PYTHONUNBUFFERED=1 \
     exec pixi run python -u tests/e2e/receiver.py \
     >"$LOG_DIR/receiver.log" 2>&1
 ) &
@@ -81,12 +81,12 @@ receiver_pid=$!
 # Give receiver a moment to join room
 sleep 1
 
-echo "[e2e] starting sender.py"
+echo "[e2e] starting sender_sw.py"
 (
   cd "$ROOT_DIR"
-  # Use headless-friendly encoder in CI to avoid GPU dependency
-  ROOM="$ROOM" SIGNAL_URL="$SIGNAL_URL" E2E_HEADLESS=1 PYTHONUNBUFFERED=1 \
-    exec pixi run python -u tests/e2e/sender.py \
+  # Software x264enc sender: no GPU or camera dependency, runs anywhere
+  ROOM="$ROOM" SIGNAL_URL="$SIGNAL_URL" PYTHONUNBUFFERED=1 \
+    exec pixi run python -u tests/e2e/sender_sw.py \
     >"$LOG_DIR/sender.log" 2>&1
 ) &
 sender_pid=$!

@@ -5,7 +5,7 @@ set -Eeuo pipefail
 IFS=$'\n\t'
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
-E2E_DIR="$ROOT_DIR/e2e"
+E2E_DIR="$ROOT_DIR/tests/e2e"
 LOG_DIR="$E2E_DIR/logs"
 ART_DIR="$E2E_DIR/artifacts"
 OUT_DIR="$ART_DIR/gpu_frames"

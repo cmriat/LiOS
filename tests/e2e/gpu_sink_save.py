@@ -6,7 +6,7 @@ Run:
   pixi run python tests/e2e/gpu_sink_save.py --frames 5 --out ./frames_gpu
 
 Prereqs:
-  - Start signaling server (see project docs) and a sender (`tests/e2e/sender.py`).
+  - Start signaling server (see project docs) and a sender (`tests/e2e/sender_sw.py`).
   - Pillow is recommended: `pixi run python -m pip install pillow` if missing.
 """
 
@@ -28,7 +28,8 @@ import gi
 gi.require_version("Gst", "1.0")
 gi.require_version("GstWebRTC", "1.0")
 gi.require_version("GstSdp", "1.0")
-from gi.repository import Gst  # type: ignore
+gi.require_version("GstApp", "1.0")
+from gi.repository import Gst, GstApp  # type: ignore
 
 from gst_webrtc import init_gst
 from gst_webrtc.gpu_sink import GpuFrameSink
@@ -64,10 +65,25 @@ async def main(nframes: int, out_dir: Path, out_fmt: str, timeout: float) -> Non
     # Start receiver loop
     recv_task = asyncio.create_task(receiver.run())
 
-    # Wait for appsink to be added by receiver, then bind
+    # Wait for the receiver to add its appsink, then bind. The receiver renames
+    # the appsink to the incoming stream's msid, so discover it by element type
+    # rather than by GpuFrameSink's original name.
+    def _find_appsink_name():
+        it = receiver.pipe.iterate_recurse()
+        while True:
+            res, elem = it.next()
+            if res == Gst.IteratorResult.OK:
+                if isinstance(elem, GstApp.AppSink):
+                    return elem.get_name()
+            elif res == Gst.IteratorResult.RESYNC:
+                it.resync()
+            else:
+                return None
+
     for _ in range(200):  # ~2s max
-        el = receiver.pipe.get_by_name(sink.name)
-        if el is not None:
+        found = _find_appsink_name()
+        if found is not None:
+            sink.name = found
             sink.bind(receiver.pipe)
             print(f"[gpu-sink-test] bound appsink: {sink.name}")
             break
@@ -81,7 +97,6 @@ async def main(nframes: int, out_dir: Path, out_fmt: str, timeout: float) -> Non
                 continue
 
             arr: np.ndarray = frame.array
-            h, w = arr.shape[:2]
             info = {
                 "shape": arr.shape,
                 "dtype": str(arr.dtype),

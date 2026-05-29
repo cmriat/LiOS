@@ -73,7 +73,12 @@ def main() -> int:
     # Step 1: Child writes v1; parent verifies visibility (only for CUDA)
     v1 = 1.2345
     parent_conn.send(("write1", v1))
-    tag, mean1 = parent_conn.recv()
+    msg = parent_conn.recv()
+    if msg[0] == "child_error":
+        print(f"FAIL: child raised: {msg[1]}")
+        proc.terminate(); proc.join(5)
+        return 6
+    tag, mean1 = msg
     assert tag == "done1"
     if is_cuda:
         torch.cuda.synchronize()
@@ -92,7 +97,12 @@ def main() -> int:
     if is_cuda:
         torch.cuda.synchronize()
     parent_conn.send(("parent_written2", v2))
-    tag, mean2, ok2 = parent_conn.recv()
+    msg = parent_conn.recv()
+    if msg[0] == "child_error":
+        print(f"FAIL: child raised: {msg[1]}")
+        proc.terminate(); proc.join(5)
+        return 7
+    tag, mean2, ok2 = msg
     assert tag == "seen2"
     if is_cuda:
         print(f"parent->child CUDA propagation: child_mean={mean2:.6f} child_allclose={ok2}")
