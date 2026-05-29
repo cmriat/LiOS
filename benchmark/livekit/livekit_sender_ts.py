@@ -35,33 +35,10 @@ def _token(identity: str) -> str:
     )
 
 
-def _room_options() -> "rtc.RoomOptions":
-    """Optionally route ICE through the existing external coturn.
-
-    Set LK_TURN (e.g. turn:TURN_HOST:3478?transport=udp) to use it.
-    LK_FORCE_RELAY=1 (default) forces media through the relay (same path gst uses).
-    """
-    turn = os.environ.get("LK_TURN")
-    if not turn:
-        return rtc.RoomOptions()
-    ice = rtc.IceServer(
-        urls=[turn],
-        username=os.environ.get("LK_TURN_USER", ""),
-        password=os.environ.get("LK_TURN_PASS", ""),
-    )
-    relay = os.environ.get("LK_FORCE_RELAY", "1") not in ("0", "false", "False", "")
-    policy = (
-        rtc.IceTransportType.TRANSPORT_RELAY if relay else rtc.IceTransportType.TRANSPORT_ALL
-    )
-    print(f"[lk] external TURN={turn} force_relay={relay}", flush=True)
-    return rtc.RoomOptions(
-        rtc_config=rtc.RtcConfiguration(ice_servers=[ice], ice_transport_type=policy)
-    )
-
-
 async def main() -> None:
     room = rtc.Room()
-    await room.connect(URL, _token("lk-pub"), options=_room_options())
+    # Connect to LiveKit Cloud with its default routing (its own PoPs).
+    await room.connect(URL, _token("lk-pub"))
     source = rtc.VideoSource(W, H)
     track = rtc.LocalVideoTrack.create_video_track("cam0", source)
     opts = rtc.TrackPublishOptions(

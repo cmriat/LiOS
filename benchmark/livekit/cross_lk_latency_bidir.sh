@@ -9,7 +9,7 @@ SECRET=${SECRET:?missing LK secret — put it in dev/secrets.env (scp from the s
 REMOTE=your-remote-host; RDIR=~/gst-webrtc
 unset http_proxy https_proxy all_proxy HTTP_PROXY HTTPS_PROXY ALL_PROXY 2>/dev/null||true
 export NO_PROXY=RELAY_HOST,your-host.example.com,.example.com,127.0.0.1,localhost
-ENVV="LK_URL=$URL LK_KEY=$KEY LK_SECRET='$SECRET' LK_FORCE_RELAY=0"
+ENVV="LK_URL=$URL LK_KEY=$KEY LK_SECRET='$SECRET'"
 SND=benchmark/livekit/livekit_sender_ts.py; RCV=benchmark/livekit/livekit_receiver_ts.py
 cleanup(){ pkill -f livekit_sender_ts.py 2>/dev/null; pkill -f livekit_receiver_ts.py 2>/dev/null; }
 trap cleanup EXIT
@@ -29,7 +29,7 @@ R=lkb_f
 ssh "$REMOTE" "cd $RDIR; unset http_proxy https_proxy all_proxy 2>/dev/null;
   $ENVV LK_ROOM=$R DURATION=26 pixi run -e livekit python $RCV >/tmp/lkb_f_recv.log 2>&1" &
 S=$!; sleep 7
-LK_URL=$URL LK_KEY=$KEY LK_SECRET="$SECRET" LK_FORCE_RELAY=0 LK_ROOM=$R FPS=1 DURATION=22 \
+LK_URL=$URL LK_KEY=$KEY LK_SECRET="$SECRET" LK_ROOM=$R FPS=1 DURATION=22 \
   pixi run -e livekit python $SND >/tmp/lkb_f_send.log 2>&1 &
 wait $!; wait "$S" 2>/dev/null; cleanup
 grep -aoE '\[ts\]\[lk-sender\]\[cam0\] [0-9.]+' /tmp/lkb_f_send.log|awk '{print $NF}'>/tmp/lkb_f_send.txt
@@ -39,7 +39,7 @@ sleep 3
 
 echo "=== REV remote -> admin01 (LiveKit) ==="
 R=lkb_r
-PYTHONUNBUFFERED=1 LK_URL=$URL LK_KEY=$KEY LK_SECRET="$SECRET" LK_FORCE_RELAY=0 LK_ROOM=$R DURATION=30 \
+PYTHONUNBUFFERED=1 LK_URL=$URL LK_KEY=$KEY LK_SECRET="$SECRET" LK_ROOM=$R DURATION=30 \
   pixi run -e livekit python $RCV >/tmp/lkb_r_recv.log 2>&1 &
 RPID=$!; sleep 7
 ssh "$REMOTE" "cd $RDIR; unset http_proxy https_proxy all_proxy 2>/dev/null;

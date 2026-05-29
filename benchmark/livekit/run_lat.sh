@@ -7,12 +7,11 @@
 #   REV pod(pub)     -> SFU -> admin01(sub): M_b = recv_admin - send_pod = d - offset
 #   true one-way d = (M_f + M_b)/2 ; clock offset = (M_f - M_b)/2
 #
-# Env: LK_URL LK_KEY LK_SECRET  [LABEL] [LK_FORCE_RELAY]
+# Env: LK_URL LK_KEY LK_SECRET  [LABEL]
 set -u
 cd /home/admin01/gst-webrtc
 : "${LK_URL:?need LK_URL}"; : "${LK_KEY:?need LK_KEY}"; : "${LK_SECRET:?need LK_SECRET}"
 LABEL=${LABEL:-lk}
-export LK_FORCE_RELAY=${LK_FORCE_RELAY:-0}
 REMOTE=your-remote-host
 RDIR=~/gst-webrtc
 SND=benchmark/livekit/livekit_sender_ts.py
@@ -21,7 +20,7 @@ unset http_proxy https_proxy all_proxy HTTP_PROXY HTTPS_PROXY ALL_PROXY 2>/dev/n
 export NO_PROXY=RELAY_HOST,your-host.example.com,.example.com,.livekit.cloud,127.0.0.1,localhost
 export LK_URL LK_KEY LK_SECRET
 
-REMENV="LK_URL='$LK_URL' LK_KEY='$LK_KEY' LK_SECRET='$LK_SECRET' LK_FORCE_RELAY=$LK_FORCE_RELAY"
+REMENV="LK_URL='$LK_URL' LK_KEY='$LK_KEY' LK_SECRET='$LK_SECRET'"
 cleanup(){
   pkill -f livekit_sender_ts.py 2>/dev/null; pkill -f livekit_receiver_ts.py 2>/dev/null
   ssh -o BatchMode=yes "$REMOTE" 'pkill -f livekit_sender_ts.py; pkill -f livekit_receiver_ts.py' 2>/dev/null

@@ -149,9 +149,17 @@ def _rtp_h264_to_appsink_desc(appsink_name: str = "recv_app", to_format: str = "
 
     Keep a leaky queue before appsink to avoid backpressure.
     """
-    # Prefer the NVDEC decoder when present; otherwise fall back to CPU avdec_h264.
+    # DECODER=auto (default) uses nvh264dec when present, else CPU avdec_h264.
+    # Force with DECODER=nv | sw.
     q = "queue max-size-buffers=1 max-size-time=0 max-size-bytes=0 leaky=downstream"
-    dec = "nvh264dec" if Gst.ElementFactory.find("nvh264dec") else "avdec_h264"
+    mode = os.environ.get("DECODER", "auto")  # auto | nv | sw
+    if mode == "nv":
+        dec = "nvh264dec"
+    elif mode == "sw":
+        dec = "avdec_h264"
+    else:
+        dec = "nvh264dec" if Gst.ElementFactory.find("nvh264dec") else "avdec_h264"
+    print(f"[receiver] decoder={dec} (DECODER={mode})", flush=True)
 
     return (
         f'capsfilter caps="application/x-rtp" ! rtph264depay ! h264parse ! '

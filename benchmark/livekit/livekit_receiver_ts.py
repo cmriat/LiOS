@@ -36,28 +36,6 @@ def _token(identity: str) -> str:
     )
 
 
-def _room_options() -> "rtc.RoomOptions":
-    """Optionally route ICE through the existing external coturn (LK_TURN env).
-    auto_subscribe stays True so the subscriber still receives the track.
-    """
-    turn = os.environ.get("LK_TURN")
-    if not turn:
-        return rtc.RoomOptions()
-    ice = rtc.IceServer(
-        urls=[turn],
-        username=os.environ.get("LK_TURN_USER", ""),
-        password=os.environ.get("LK_TURN_PASS", ""),
-    )
-    relay = os.environ.get("LK_FORCE_RELAY", "1") not in ("0", "false", "False", "")
-    policy = (
-        rtc.IceTransportType.TRANSPORT_RELAY if relay else rtc.IceTransportType.TRANSPORT_ALL
-    )
-    print(f"[lk] external TURN={turn} force_relay={relay}", flush=True)
-    return rtc.RoomOptions(
-        rtc_config=rtc.RtcConfiguration(ice_servers=[ice], ice_transport_type=policy)
-    )
-
-
 async def main() -> None:
     room = rtc.Room()
     stop = asyncio.Event()
@@ -96,7 +74,8 @@ async def main() -> None:
             print(f"[lk-sub] video track subscribed: {publication.name}", flush=True)
             asyncio.create_task(_consume(track))
 
-    await room.connect(URL, _token("lk-sub"), options=_room_options())
+    # Connect to LiveKit Cloud with its default routing (its own PoPs).
+    await room.connect(URL, _token("lk-sub"))
     print(f"[lk-sub] connected room={ROOM} measure={DURATION}s device={_DEV}", flush=True)
     try:
         await asyncio.wait_for(stop.wait(), timeout=DURATION + 40)
