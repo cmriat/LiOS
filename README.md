@@ -82,6 +82,11 @@ pixi run python examples/two_cemera_sender.py
 
 # 3) start the receiver (cloud GPU: decode → CUDA → InferenceBufferV2)
 pixi run python examples/two_cemera_receiver_inferbuf.py --streams 2
+
+# 4) watch the live preview in a browser (the receiver serves it automatically)
+#    http://127.0.0.1:5082/api/v1/preview          (MJPEG stream)
+#    http://127.0.0.1:5082/api/v1/preview?cam=cam0&fps=15
+#    set FLASK_HOST=0.0.0.0 before step 3 to view from another machine
 ```
 
 Config is read from `.env` (or the environment, which wins): `ROOM`, `SIGNAL_URL`, `STUN`,

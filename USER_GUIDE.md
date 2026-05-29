@@ -1,16 +1,16 @@
-# LiOS 使用指南
+# LiOS User Guide
 
-把机器人现场的摄像头画面,用 GPU(或 CPU)编码 → 经 WebRTC 传输 → 在云端解码,落进
-推理缓冲喂给模型,并可在浏览器里实时看画面。这份指南讲清楚:**端到端怎么跑、用真实相机、
-HTTP 实时看画面、以及所有配置项**。
+Take the camera feed from a robot in the field, encode it with the GPU (or CPU) → transport it over WebRTC → decode it in the cloud, drop it into an
+inference buffer to feed your model, and optionally watch the live feed in a browser. This guide covers it all: **how to run end-to-end, use a real camera,
+view the live feed over HTTP, and every configuration option.**
 
-> 约定:本仓库环境由 [pixi](https://pixi.sh) 管理,所有 Python 命令都用 `pixi run` 前缀。
+> Convention: this repo's environment is managed by [pixi](https://pixi.sh), so all Python commands are prefixed with `pixi run`.
 
 ---
 
-## 1. 它怎么工作(30 秒理解)
+## 1. How it works (understand it in 30 seconds)
 
-一共三个角色 + 一个外部中继:
+Three roles plus one external relay:
 
 ```
    [边缘机:sender]                                  [云端机:receiver]
@@ -20,102 +20,102 @@ HTTP 实时看画面、以及所有配置项**。
               \──── 媒体流经 TURN/coturn 中继(SRTP) ────/
 ```
 
-- **signal-server**(Go):只做"握手中介",转发 SDP/ICE。两端必须都能连到它。
-- **sender / receiver**(Python):真正收发视频的两端。
-- **TURN/coturn**:转发媒体流的中继(你自己部署的近网中继是 LiOS 的核心特性)。
+- **signal-server** (Go): just a "handshake broker" that forwards SDP/ICE. Both ends must be able to reach it.
+- **sender / receiver** (Python): the two ends that actually send and receive the video.
+- **TURN/coturn**: the relay that forwards the media stream (deploying your own near-network relay is the core feature of LiOS).
 
 ---
 
-## 2. 准备环境
+## 2. Set up the environment
 
 ```bash
-pixi install          # 安装所有依赖(GStreamer 1.26 / CUDA / PyTorch / Go ...)
+pixi install          # Install all dependencies (GStreamer 1.26 / CUDA / PyTorch / Go ...)
 ```
 
-需要的外部条件:
-- 一台能跑 **signal-server** 的机器(两端都能访问它的 IP:端口)。
-- 一台 **TURN/coturn** 服务器(跨机/跨网时几乎必须;同机 localhost 测试可不用)。
-- **GPU 可选**:有 NVIDIA GPU + GStreamer nvcodec 插件(`nvh264enc`/`nvh264dec`/`cudaupload`)
-  就走硬件编解码;没有也能用 CPU(`x264enc`/`avdec_h264`)跑通,见 [第 7 节](#7-没有-gpu纯-cpu-跑)。
+External prerequisites:
+- A machine that can run **signal-server** (both ends must be able to reach its IP:port).
+- A **TURN/coturn** server (practically mandatory across machines/networks; you can skip it for same-machine localhost testing).
+- **GPU optional**: with an NVIDIA GPU + the GStreamer nvcodec plugins (`nvh264enc`/`nvh264dec`/`cudaupload`)
+  you get hardware encode/decode; without one it still works on CPU (`x264enc`/`avdec_h264`), see [section 7](#7-没有-gpu纯-cpu-跑).
 
 ---
 
-## 3. 配置:`.env` 全部参数
+## 3. Configuration: every `.env` parameter
 
-把模板复制成 `.env`(已被 git 忽略,可放真实密钥),两个 example 启动时会自动加载它
-(`gst_webrtc.load_env()`;**已存在的环境变量优先于 `.env`**):
+Copy the template to `.env` (it's git-ignored, so you can put real secrets in it). Both examples load it automatically at startup
+(`gst_webrtc.load_env()`; **existing environment variables take precedence over `.env`**):
 
 ```bash
 cp .env.example .env
 ```
 
-| 变量 | 作用 | 默认 |
+| Variable | Purpose | Default |
 |---|---|---|
-| `ROOM` | 房间名,**两端必须一致**,靠它互相发现 | `demo` |
-| `SIGNAL_URL` | 信令服务器 WebSocket 地址 | `ws://127.0.0.1:18080/ws` |
-| `STUN` | STUN 服务器 | `stun://stun.l.google.com:19302` |
-| `TURN` | TURN/coturn 中继 `turn://user:pass@host:port?transport=udp` | 占位符 |
-| `VIDEO_SOURCE` | `test`(合成测试图,无需相机)\| `v4l2`(真实相机) | `test` |
-| `CAMERAS` | 要开哪几路(见下) | `cam0,cam1` |
-| `WIDTH` / `HEIGHT` | 采集分辨率 | `640` / `480` |
-| `FPS` | 默认帧率(`CAMERAS` 里每路的 `@fps` 会覆盖它) | `30` |
-| `ENCODER` | 发送端编码器:`auto` \| `nv`(NVENC)\| `sw`(x264,无需 GPU) | `auto` |
-| `DECODER` | 接收端解码器:`auto` \| `nv`(NVDEC)\| `sw`(avdec_h264) | `auto` |
-| `FLASK_HOST` / `FLASK_PORT` | 接收端 HTTP 服务监听地址/端口(预览+缓冲接口) | `127.0.0.1` / `5082` |
-| `LK_URL/LK_KEY/LK_SECRET` | **可选**,仅 LiveKit 对比 benchmark 用,跑 LiOS 不需要 | 空 |
+| `ROOM` | Room name, **must match on both ends**; this is how they find each other | `demo` |
+| `SIGNAL_URL` | Signal server WebSocket address | `ws://127.0.0.1:18080/ws` |
+| `STUN` | STUN server | `stun://stun.l.google.com:19302` |
+| `TURN` | TURN/coturn relay `turn://user:pass@host:port?transport=udp` | placeholder |
+| `VIDEO_SOURCE` | `test` (synthetic test pattern, no camera needed) \| `v4l2` (real camera) | `test` |
+| `CAMERAS` | Which streams to open (see below) | `cam0,cam1` |
+| `WIDTH` / `HEIGHT` | Capture resolution | `640` / `480` |
+| `FPS` | Default frame rate (the `@fps` of each entry in `CAMERAS` overrides it) | `30` |
+| `ENCODER` | Sender encoder: `auto` \| `nv` (NVENC) \| `sw` (x264, no GPU needed) | `auto` |
+| `DECODER` | Receiver decoder: `auto` \| `nv` (NVDEC) \| `sw` (avdec_h264) | `auto` |
+| `FLASK_HOST` / `FLASK_PORT` | Receiver HTTP service listen address/port (preview + buffer endpoints) | `127.0.0.1` / `5082` |
+| `LK_URL/LK_KEY/LK_SECRET` | **Optional**, only for the LiveKit comparison benchmark; not needed to run LiOS | empty |
 
-`CAMERAS` 格式:
-- `test` 模式:逗号分隔的流名,可带帧率 → `cam0,cam1` 或 `cam0@30,cam1@15`
-- `v4l2` 模式:`名字=/dev/videoN@帧率` → `mid=/dev/video0@30,left=/dev/video4@25`
+`CAMERAS` format:
+- `test` mode: comma-separated stream names, optionally with a frame rate → `cam0,cam1` or `cam0@30,cam1@15`
+- `v4l2` mode: `name=/dev/videoN@fps` → `mid=/dev/video0@30,left=/dev/video4@25`
 
-`auto` 的含义:`ENCODER=auto` 在检测到 `nvh264enc`+`cudaupload` 时用 NVENC,否则自动退到
-x264 软编;`DECODER=auto` 同理(有 `nvh264dec` 用 NVDEC,否则 `avdec_h264`)。
+What `auto` means: `ENCODER=auto` uses NVENC when it detects `nvh264enc`+`cudaupload`, otherwise it automatically falls back to
+x264 software encoding; `DECODER=auto` works the same way (NVDEC via `nvh264dec` if available, otherwise `avdec_h264`).
 
 ---
 
-## 4. 跑通端到端
+## 4. Run it end-to-end
 
-### 4.1 单机快速验证(最省事,先确认链路通)
+### 4.1 Single-machine quick check (the easiest way; confirm the link first)
 
-同一台机器开三个终端(都在仓库根目录)。`.env` 用默认值即可(`SIGNAL_URL` 指向本机)。
+Open three terminals on the same machine (all in the repo root). The default `.env` is fine (`SIGNAL_URL` points to localhost).
 
 ```bash
-# 终端 1 —— 信令服务器
+# Terminal 1 —— signal server
 cd signal-server && go build -o webrtcssvr . && ./webrtcssvr serve --addr :18080
 
-# 终端 2 —— 接收端(先起,等流)
+# Terminal 2 —— receiver (start first, wait for the stream)
 pixi run python examples/two_cemera_receiver_inferbuf.py --streams 2
 
-# 终端 3 —— 发送端(videotestsrc 测试图)
+# Terminal 3 —— sender (videotestsrc test pattern)
 pixi run python examples/two_cemera_sender.py
 ```
 
-> 同机如果不想配 TURN,可把 `.env` 的 `TURN` 留占位符——localhost 一般能走主机候选直连。
-> 跨机则几乎一定要配真实可达的 TURN。
+> If you'd rather not configure TURN on a single machine, leave the `TURN` placeholder in `.env`—localhost can usually connect directly via host candidates.
+> Across machines you almost always need a real, reachable TURN.
 
-### 4.2 跨机部署(三个角色)
+### 4.2 Cross-machine deployment (three roles)
 
-推荐把 **signal-server 和 receiver 放同一台云端机(机器 B)**,sender 放边缘机(机器 A)。
-设机器 B 的可达 IP 为 `B_IP`。
+It's recommended to put **signal-server and receiver on the same cloud machine (machine B)** and the sender on the edge machine (machine A).
+Let machine B's reachable IP be `B_IP`.
 
-**机器 B(云端):跑 signal-server + receiver**
-`.env` 关键项:
+**Machine B (cloud): run signal-server + receiver**
+Key `.env` items:
 ```bash
 ROOM=demo
-SIGNAL_URL=ws://127.0.0.1:18080/ws     # B 上 signal-server 是本地
+SIGNAL_URL=ws://127.0.0.1:18080/ws     # signal-server is local on B
 TURN=turn://USER:PASS@TURN_HOST:3478?transport=udp
-FLASK_HOST=0.0.0.0                      # 想从别的机器看预览就设 0.0.0.0
+FLASK_HOST=0.0.0.0                      # set 0.0.0.0 to view the preview from another machine
 ```
 ```bash
-cd signal-server && go build -o webrtcssvr . && ./webrtcssvr serve --addr :18080   # 终端1
-pixi run python examples/two_cemera_receiver_inferbuf.py --streams 2                # 终端2
+cd signal-server && go build -o webrtcssvr . && ./webrtcssvr serve --addr :18080   # terminal 1
+pixi run python examples/two_cemera_receiver_inferbuf.py --streams 2                # terminal 2
 ```
 
-**机器 A(边缘):跑 sender**
-`.env` 关键项(`SIGNAL_URL` 必须指向 B_IP):
+**Machine A (edge): run sender**
+Key `.env` items (`SIGNAL_URL` must point to B_IP):
 ```bash
 ROOM=demo
-SIGNAL_URL=ws://B_IP:18080/ws          # ← 关键
+SIGNAL_URL=ws://B_IP:18080/ws          # ← the key part
 TURN=turn://USER:PASS@TURN_HOST:3478?transport=udp
 VIDEO_SOURCE=test
 ```
@@ -123,129 +123,215 @@ VIDEO_SOURCE=test
 pixi run python examples/two_cemera_sender.py
 ```
 
-**跨机必须打通的两件事:**
-1. 机器 A → `B_IP` 的 **TCP 18080**(信令)。
-2. A、B → TURN 主机的 **UDP 3478**(媒体中继)。
+**Two things that must be reachable across machines:**
+1. Machine A → `B_IP` on **TCP 18080** (signaling).
+2. A, B → the TURN host on **UDP 3478** (media relay).
 
-### 4.3 怎么判断通了
+**When 18080 can't be reached directly (only an SSH channel, e.g. a Coder workspace): use SSH port forwarding**
 
-按这个顺序看日志:
-- **signal-server**:`listening on :18080` → 两端连上后 `joined room=demo peer=sender-xxx` / `peer=receiver-xxx`。
-- **sender**:`[sender] source=test encoder=nv/sw ...` → `[webrtc] sent offer` → `[webrtc] connection state: connected`。
-- **receiver**:`[receiver] decoder=...` → `[receiver] appsink bound: cam0` → 持续刷
-  `[cam0] frame (224, 224, 3) from appsink` = **端到端通了**。
-- receiver 还会打印 `[flask] serving on http://HOST:5082 ...`。
+Without changing `.env` (both ends still use `127.0.0.1:18080`), tunnel local 18080 on **A (the sender machine)**
+to B's signal-server:
+```bash
+ssh -N -L 18080:127.0.0.1:18080 <RECEIVER_SSH_HOST>
+# Replace <RECEIVER_SSH_HOST> with the name you SSH into B (the receiver machine) with, e.g. user@1.2.3.4 or an alias from ~/.ssh/config
+```
+Keep this terminal open; while the tunnel is alive, `ws://127.0.0.1:18080/ws` on A reaches B's signal-server directly.
+**Only this one signaling port needs forwarding**—the media goes over TURN (the `?transport=udp` host) and never through the tunnel.
+While you're at it, add the preview port too (`-L 5082:127.0.0.1:5082`) and you can watch B's live feed in your local browser.
+
+### 4.3 How to tell it's working
+
+Check the logs in this order:
+- **signal-server**: `listening on :18080` → after both ends connect, `joined room=demo peer=sender-xxx` / `peer=receiver-xxx`.
+- **sender**: `[sender] source=test encoder=nv/sw ...` → `[webrtc] sent offer` → `[webrtc] connection state: connected`.
+- **receiver**: `[receiver] decoder=...` → `[receiver] appsink bound: cam0` → a continuous stream of
+  `[cam0] frame (224, 224, 3) from appsink` = **end-to-end is working**.
+- The receiver also prints `[flask] serving on http://HOST:5082 ...`.
+
+### 4.4 Configuring coturn (practically mandatory across machines)
+
+On a single machine you don't need TURN (it connects directly via host candidates). **As soon as you go cross-machine/cross-NAT**, the two ends'
+host candidates can't reach each other, and you need a TURN relay to forward the media. The core LiOS approach is to deploy this coturn **close to the cloud
+GPU (machine B)** so the media takes the shortest detour.
+
+The code consumes exactly **one** TURN URI (`webrtcbin`'s `turn-server` property) using long-term credentials
+(username/password), so configuring a single coturn user is enough.
+
+**1) Install (Ubuntu/Debian):**
+```bash
+sudo apt-get install -y coturn
+```
+
+**2) Write `/etc/turnserver.conf` (minimal working config):**
+```ini
+listening-port=3478
+fingerprint
+lt-cred-mech                       # long-term credential mechanism, paired with user= below
+user=lios:S3cret-change-me         # username:password, must match the TURN in .env
+realm=lios
+external-ip=B_PUBLIC_IP            # required when the relay is behind NAT/cloud: its public/reachable IP
+min-port=49152                     # relay port range, open it in the firewall too
+max-port=65535
+no-tls                             # no TLS (turns://); plain turn:// only
+no-dtls
+no-cli
+```
+
+**3) Start the service:**
+```bash
+# Option A: systemd (first let the default config allow startup)
+echo 'TURNSERVER_ENABLED=1' | sudo tee /etc/default/coturn
+sudo systemctl enable --now coturn
+
+# Option B: run in the foreground (most direct for watching logs while debugging)
+turnserver -c /etc/turnserver.conf -v
+```
+
+**4) Open the firewall (critical—miss this and the sender stays stuck at `connecting`):**
+- `UDP/TCP 3478` —— the TURN control port
+- `UDP 49152-65535` —— the relay media port range (aligned with `min/max-port` above)
+
+**5) Put the same line in both ends' `.env` (matching the `user=` credentials and the relay machine IP):**
+```bash
+TURN=turn://lios:S3cret-change-me@B_PUBLIC_IP:3478?transport=udp
+```
+
+**6) Verify TURN itself works (independent of the whole video pipeline):**
+```bash
+# coturn's built-in load-test client; getting a relay address means credentials + ports are correct
+turnutils_uclient -v -u lios -w S3cret-change-me B_PUBLIC_IP
+# Or open a Trickle ICE page in the browser, enter this turn:// and see if you get a typ relay candidate
+```
+Once the sender log reaches `connection state: connected` and the receiver keeps printing `frame ... from appsink`,
+the whole chain—including TURN—is working.
+
+> Note: `transport=udp` refers only to the sender/receiver **to TURN** hop using UDP; coturn listens on 3478 over both
+> UDP and TCP by default. If a client's network only allows TCP, change the URI to `?transport=tcp` (and make sure 3478/TCP is open).
 
 ---
 
-## 5. 用真实相机(v4l2)
+## 5. Using a real camera (v4l2)
 
-1. 先看有哪些设备和支持的格式:
+1. First, check which devices and formats are available:
    ```bash
    ls /dev/video*
-   v4l2-ctl --list-devices                 # 若装了 v4l-utils
+   v4l2-ctl --list-devices                 # if v4l-utils is installed
    v4l2-ctl -d /dev/video0 --list-formats-ext
    ```
-2. 在(sender 机器的)`.env` 里:
+2. In the (sender machine's) `.env`:
    ```bash
    VIDEO_SOURCE=v4l2
    CAMERAS=mid=/dev/video0@30,left=/dev/video4@25
    WIDTH=640
    HEIGHT=480
    ```
-3. 启动 sender:`pixi run python examples/two_cemera_sender.py`
+3. Start the sender: `pixi run python examples/two_cemera_sender.py`
 
-**注意点:**
-- 流的名字(`mid`/`left`)会作为 msid 传到接收端,接收端用它当推理缓冲的 key,也用于
-  HTTP 预览的 `?cam=` 选择。
-- example 的 v4l2 管线请求的是 `format=YUY2`。如果你的相机只支持 MJPG/其它格式,这条会失败;
-  需要相应改 `examples/two_cemera_sender.py` 里 `v4l2_source()` 的 caps(把 `format=YUY2`
-  换成相机支持的,或插 `jpegdec`)。
-- 分辨率/帧率必须是相机真实支持的组合(用上面的 `--list-formats-ext` 确认)。
+**Things to watch out for:**
+- The stream names (`mid`/`left`) are passed to the receiver as the msid; the receiver uses them as the key for the inference buffer and also
+  for selecting via `?cam=` in the HTTP preview.
+- The example's v4l2 pipeline requests `format=YUY2`. If your camera only supports MJPG/another format, this will fail;
+  you'll need to adjust the caps in `v4l2_source()` in `examples/two_cemera_sender.py` accordingly (change `format=YUY2`
+  to what the camera supports, or insert `jpegdec`).
+- The resolution/frame rate must be a combination the camera actually supports (confirm with `--list-formats-ext` above).
 
 ---
 
-## 6. HTTP 实时看画面
+## 6. Watching the live feed over HTTP
 
-接收端会在后台起一个 HTTP 服务(`FLASK_HOST:FLASK_PORT`,默认 `127.0.0.1:5082`),提供三个接口:
+The receiver starts an HTTP service in the background (`FLASK_HOST:FLASK_PORT`, default `127.0.0.1:5082`) that exposes three endpoints:
 
-| 接口 | 作用 |
+| Endpoint | Purpose |
 |---|---|
-| `GET /api/v1/preview` | **MJPEG 实时视频流**,浏览器直接打开就能看实时画面 |
-| `GET /api/v1/preview.jpg` | 最新一帧的单张 JPEG(适合脚本抓图/手动刷新) |
-| `GET /api/v1/infer-buffer/base64` | 原始推理缓冲(base64,给同机进程取数据用,不是图片) |
-| `GET /api/v1/healthz` | 健康检查 |
+| `GET /api/v1/preview` | **Live MJPEG video stream**; open it in a browser to watch the live feed directly |
+| `GET /api/v1/preview.jpg` | A single JPEG of the latest frame (good for scripted snapshots/manual refresh) |
+| `GET /api/v1/infer-buffer/base64` | The raw inference buffer (base64, for a same-machine process to fetch data; not an image) |
+| `GET /api/v1/healthz` | Health check |
 
-**实时看画面:** 浏览器打开
+**Watch the live feed:** open in a browser
 ```
 http://<接收端IP>:5082/api/v1/preview
 ```
-多路时选某一路 / 限制帧率:
+With multiple streams, select one / limit the frame rate:
 ```
 http://<接收端IP>:5082/api/v1/preview?cam=cam0&fps=15
 ```
 
-**要从别的机器看:** 接收端启动前在 `.env` 设 `FLASK_HOST=0.0.0.0`(默认 `127.0.0.1` 只能本机看),
-并放行该端口。
+**To view from another machine:** set `FLASK_HOST=0.0.0.0` in `.env` before starting the receiver (the default `127.0.0.1` only allows local viewing),
+and open the port. **If you only have an SSH channel** (e.g. a Coder workspace), keep the default `127.0.0.1` and just forward it locally:
+```bash
+ssh -N -L 5082:127.0.0.1:5082 <RECEIVER_SSH_HOST>   # locally open http://127.0.0.1:5082/api/v1/preview
+```
 
-**安全提醒:** 预览和缓冲接口**没有鉴权**,`FLASK_HOST=0.0.0.0` 会把画面暴露到该网段所有人。
-只在可信内网这么做,公网请加反向代理/鉴权。
+**Can't open it? First diagnose with curl, bypassing the proxy** (separating "does the service/link have data" from "the browser is misconfigured"):
+```bash
+curl -sS --noproxy '*' -o /tmp/p.jpg -w "HTTP %{http_code} %{size_download}B\n" \
+  http://127.0.0.1:5082/api/v1/preview.jpg
+```
+- `HTTP 200` with a few KB → the service is fine, the problem is the **browser proxy** (add `localhost,127.0.0.1` to the no-proxy whitelist).
+- `HTTP 404` / `0B` → the service is up but **has no frames yet**; go back to the receiver and check whether it's printing `frame ... from appsink`.
+- `Couldn't connect` → Flask isn't up or the port/tunnel is wrong; go back to the receiver and look for `[flask] serving on ...`.
 
-> 原理:`/preview` 从 live 推理缓冲里取最新帧(HWC uint8 RGB tensor),在锁内拷到 CPU、
-> 编成 JPEG 返回。`/api/v1/infer-buffer/base64` 走的是 CUDA-IPC 序列化,**跨机还原不出图**
-> (句柄只在同机同 GPU 有效),所以远程"看画面"请用 `/preview`。
+**Security reminder:** the preview and buffer endpoints have **no authentication**; `FLASK_HOST=0.0.0.0` exposes the feed to everyone on that network segment.
+Only do this on a trusted internal network; add a reverse proxy/authentication for public networks.
+
+> How it works: `/preview` takes the latest frame from the live inference buffer (an HWC uint8 RGB tensor), copies it to the CPU under a lock,
+> encodes it as JPEG, and returns it. `/api/v1/infer-buffer/base64` uses CUDA-IPC serialization and **can't be restored to an image across machines**
+> (the handle is only valid on the same machine and GPU), so for remote "watch the feed" use `/preview`.
 
 ---
 
-## 7. 没有 GPU(纯 CPU 跑)
+## 7. No GPU (running on CPU only)
 
-整条链路都能在没有 NVENC/NVDEC 的机器上跑:
+The whole chain can run on a machine without NVENC/NVDEC:
 
-- **发送端**:`.env` 设 `ENCODER=sw`(或靠 `auto` 自动探测),用 `x264enc` 软编。
-- **接收端**:`.env` 设 `DECODER=sw`(或 `auto`),用 `avdec_h264` 软解。
-- **推理缓冲**:无 CUDA 时自动用 CPU tensor(功能正常,只是这段不再是 CUDA-IPC 零拷贝)。
+- **Sender**: set `ENCODER=sw` in `.env` (or rely on `auto` to detect it) to use `x264enc` software encoding.
+- **Receiver**: set `DECODER=sw` in `.env` (or `auto`) to use `avdec_h264` software decoding.
+- **Inference buffer**: without CUDA it automatically uses a CPU tensor (works fine, this part just isn't CUDA-IPC zero-copy anymore).
 
 ```bash
-# 无 GPU 机器的 .env
+# .env on a machine without a GPU
 ENCODER=sw
 DECODER=sw
 ```
 
-> 提示:某些机器装了 `nvh264enc` 插件但运行时 NVENC session 打不开。`auto` 通常能正确探测
-> (开不了会注册失败、自动退到软编);若遇到 auto 误判,显式设 `ENCODER=sw` 最稳。
+> Tip: some machines have the `nvh264enc` plugin installed but can't open an NVENC session at runtime. `auto` usually detects this correctly
+> (it fails to register and falls back to software encoding automatically); if `auto` misjudges, setting `ENCODER=sw` explicitly is the most reliable.
 
 ---
 
-## 8. 故障排查
+## 8. Troubleshooting
 
-| 现象 | 多半原因 |
+| Symptom | Likely cause |
 |---|---|
-| signal-server 没有 `joined` 日志 | `SIGNAL_URL` 不对 / 服务器没起 / 跨机端口 18080 不通(`nc -vz B_IP 18080`) |
-| sender 一直 `connection state: connecting`/`failed` | ICE 没打通,几乎都是 **TURN**:地址/凭据错、或 UDP 3478 被挡 |
-| sender 报 `nvh264enc`/`cudaupload` not found | 这台没 NVIDIA GStreamer 插件 → 设 `ENCODER=sw` |
-| receiver 连上但没有 `frame ... from appsink` | 流没过来或解码失败,先查 TURN/网络;可设 `GST_DEBUG=4` 看细节 |
-| 浏览器打开 `/preview` 404 / no frame | 还没收到帧(等 sender 连上),或 `?cam=` 名字不存在 |
-| 远程打不开预览 | 接收端 `FLASK_HOST` 还是 `127.0.0.1`,改成 `0.0.0.0` 并放行端口 |
-| v4l2 启动失败 | 相机不支持请求的 `WIDTH/HEIGHT/fps/YUY2` 组合,用 `v4l2-ctl --list-formats-ext` 核对 |
+| signal-server has no `joined` log | `SIGNAL_URL` is wrong / the server isn't up / cross-machine port 18080 is blocked (`nc -vz B_IP 18080`) |
+| sender handshake reports `InvalidMessage` / `did not receive a valid HTTP response` | **A proxy is enabled locally**: `websockets` (v15+) routes even `ws://127.0.0.1` through `ALL_PROXY`/`HTTPS_PROXY`, breaking the handshake. Run `export no_proxy=localhost,127.0.0.1` (or temporarily disable the proxy) and restart |
+| sender stuck at `connection state: connecting`/`failed` | ICE didn't connect, almost always **TURN**: wrong address/credentials, or UDP 3478 is blocked |
+| sender reports `nvh264enc`/`cudaupload` not found | this machine lacks the NVIDIA GStreamer plugins → set `ENCODER=sw` |
+| receiver connects but no `frame ... from appsink` | the stream isn't arriving or decoding failed; check TURN/network first; set `GST_DEBUG=4` for details |
+| browser opens `/preview` to 404 / no frame | no frames received yet (wait for the sender to connect), or the `?cam=` name doesn't exist |
+| `curl` returns an image but the browser can't open the preview | the **browser proxy** forwards `127.0.0.1`; add `localhost,127.0.0.1` to the browser's "no proxy" whitelist |
+| can't open the preview remotely | the receiver's `FLASK_HOST` is still `127.0.0.1`; change it to `0.0.0.0` and open the port; or forward 5082 over SSH (see below) |
+| v4l2 fails to start | the camera doesn't support the requested `WIDTH/HEIGHT/fps/YUY2` combination; verify with `v4l2-ctl --list-formats-ext` |
 
-调试管线细节:任意一端加 `GST_DEBUG=4`(或更高)再启动。
+To debug pipeline details: add `GST_DEBUG=4` (or higher) on either end before starting.
 
 ---
 
-## 9. 附:命令速查
+## 9. Appendix: command cheat sheet
 
 ```bash
-# 信令服务器
+# signal server
 cd signal-server && go build -o webrtcssvr . && ./webrtcssvr serve --addr :18080
 
-# 接收端(N 路,监听所有网卡的 5082 以便远程看预览)
+# receiver (N streams, listening on 5082 on all interfaces so the preview is reachable remotely)
 FLASK_HOST=0.0.0.0 pixi run python examples/two_cemera_receiver_inferbuf.py --streams 2
 
-# 发送端(测试图 / 真实相机由 .env 的 VIDEO_SOURCE 决定)
+# sender (test pattern / real camera, decided by VIDEO_SOURCE in .env)
 pixi run python examples/two_cemera_sender.py
 
-# 浏览器实时看画面
-#   http://<接收端IP>:5082/api/v1/preview
+# watch the live feed in a browser
+#   http://<receiver IP>:5082/api/v1/preview
 ```
 
-更多设计/架构见 [`design.md`](design.md) 与 [`docs/`](docs/)。
+For more on design/architecture, see [`design.md`](design.md) and [`docs/`](docs/).
