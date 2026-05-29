@@ -6,8 +6,8 @@ from typing import Any, AsyncIterator, List, Optional
 import websockets
 
 
-# 与 signal-server/server/server.go 的 Envelope 对齐
-# 仅用于 Python 侧封装收发，字段名保持一致（from -> from_ 避免关键字冲突）
+# Mirrors the Envelope in signal-server/server/server.go.
+# `from` is renamed to `from_` to avoid clashing with the Python keyword.
 @dataclass
 class Envelope:
     type: str
@@ -34,7 +34,7 @@ class Envelope:
     def from_json(raw: str) -> "Envelope":
         m = json.loads(raw)
         data = m.get("data")
-        # 容错：部分服务可能把 data 再包了一层字符串
+        # Tolerate servers that double-encode `data` as a JSON string.
         if isinstance(data, str):
             try:
                 data = json.loads(data)
@@ -52,14 +52,13 @@ class Envelope:
 
 class SignalClient:
     """
-    简单的 WebSocket 信令客户端封装
+    Minimal WebSocket signaling client.
 
-    功能：
-    - 建连/关闭（支持 async with）
-    - 加入房间（join）与广播 ready
-    - 统一封装 offer/answer/candidate 的收发
-    - 提供迭代器按 Envelope 读取消息
-    - 线程安全发送：可在 GStreamer 回调等非协程线程中调用
+    - connect/close (supports `async with`)
+    - join a room and broadcast `ready`
+    - send/receive offer/answer/candidate
+    - iterate incoming messages as `Envelope`
+    - thread-safe send: callable from non-async threads (e.g. GStreamer callbacks)
     """
 
     def __init__(self, url: str, room: str, me: str):
@@ -69,7 +68,7 @@ class SignalClient:
         self.ws: Optional[websockets.ClientProtocol] = None
         self.loop: Optional[asyncio.AbstractEventLoop] = None
 
-    # ---------- 基础生命周期 ----------
+    # ---------- lifecycle ----------
     async def connect(self) -> None:
         self.loop = asyncio.get_running_loop()
         self.ws = await websockets.connect(self.url)
@@ -86,7 +85,7 @@ class SignalClient:
     async def __aexit__(self, exc_type, exc, tb) -> None:
         await self.close()
 
-    # ---------- 发送（线程安全包装） ----------
+    # ---------- send (thread-safe wrappers) ----------
     async def _send_env(self, env: Envelope) -> None:
         if not self.ws:
             raise RuntimeError("WebSocket is not connected")
@@ -97,7 +96,7 @@ class SignalClient:
             raise RuntimeError("Event loop is not ready")
         return asyncio.run_coroutine_threadsafe(self._send_env(env), self.loop)
 
-    # ---------- 常用动作 ----------
+    # ---------- common actions ----------
     def join(self, role: Optional[str] = None, extra: Optional[dict] = None):
         data = dict(extra or {})
         if role:
@@ -139,7 +138,7 @@ class SignalClient:
         )
         return self.send_env(env)
 
-    # ---------- 接收 ----------
+    # ---------- receive ----------
     async def recv(self) -> Envelope:
         if not self.ws:
             raise RuntimeError("WebSocket is not connected")
@@ -155,9 +154,9 @@ class SignalClient:
     def __aiter__(self) -> AsyncIterator[Envelope]:
         return self.messages()
 
-    # ---------- 辅助：发现对端 ----------
+    # ---------- helper: peer discovery ----------
     async def discover_peer(self, timeout: Optional[float] = None) -> Optional[str]:
-        """等待 'peers' 或 'peer-join'，返回第一个 peer id。超时返回 None。"""
+        """Wait for 'peers' or 'peer-join'; return the first peer id, or None on timeout."""
 
         async def _wait() -> Optional[str]:
             while True:
@@ -168,7 +167,7 @@ class SignalClient:
                         return lst[0]
                 elif m.type == "peer-join":
                     return m.from_
-                # 其他消息忽略（例如 ready / peer-leave 等）
+                # ignore other message types (e.g. ready / peer-leave)
 
         try:
             if timeout is None:

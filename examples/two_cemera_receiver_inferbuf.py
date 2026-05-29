@@ -93,15 +93,15 @@ def relax_rtp_tolerance(receiver: WebRTCReceiver):
     webrtc = receiver.webrtc
     rtpbin = None
 
-    # 方式A：直接按名字取（webrtcbin 是个 Bin，内部 child 名就叫 "rtpbin"）
+    # Plan A: look it up by name (webrtcbin is a Bin whose internal child is "rtpbin").
     try:
-        # 有的GI封装提供 child proxy：
+        # Some GI wrappers expose a child proxy:
         if hasattr(webrtc, "get_child_by_name"):
             rtpbin = webrtc.get_child_by_name("rtpbin")
     except Exception:
         pass
 
-    # 方式B：从整个 pipeline 里递归找名为 rtpbin 的元素（通用兜底）
+    # Plan B: recurse the whole pipeline for an element named "rtpbin" (generic fallback).
     if rtpbin is None:
         it = receiver.pipe.iterate_recurse()
         try:
@@ -119,22 +119,22 @@ def relax_rtp_tolerance(receiver: WebRTCReceiver):
     if not rtpbin:
         print("[tune] rtpbin not found"); return
 
-    # 2.1 新的 SSRC 一验证就把 probation 放到 1，并放宽乱序/掉包时间
-    session = rtpbin.emit("get-internal-session", 0)  # WebRTC/BUNDLE 通常用 session 0
+    # On SSRC validation, drop probation to 1 and widen misorder/dropout windows.
+    session = rtpbin.emit("get-internal-session", 0)  # WebRTC/BUNDLE uses session 0
     if session:
         def on_validated(_session, src, *a):
             try:
-                src.set_property("probation", 1)             # 连续1个包即可通过
-                src.set_property("max-misorder-time", 4000)   # 允许更大的乱序窗口(毫秒)
-                src.set_property("max-dropout-time", 120000)  # 更大的掉包容忍时间(毫秒)
+                src.set_property("probation", 1)             # accept after 1 packet
+                src.set_property("max-misorder-time", 4000)   # larger reorder window (ms)
+                src.set_property("max-dropout-time", 120000)  # larger dropout tolerance (ms)
             except Exception as e:
                 print("[tune] set RTPSource props failed:", e)
         session.connect("on-ssrc-validated", on_validated)
 
-    # 2.2 每次创建 jitterbuffer 时降低启动门槛（见 faststart-min-packets）
+    # Lower the jitterbuffer startup threshold each time one is created.
     def on_new_jbuf(_rtpbin, jbuf, session_id, ssrc, *a):
         try:
-            jbuf.set_property("faststart-min-packets", 1)     # 1个连续包就开始出队
+            jbuf.set_property("faststart-min-packets", 1)     # dequeue after 1 packet
             jbuf.set_property("max-misorder-time", 4000)
             jbuf.set_property("max-dropout-time", 120000)
         except Exception as e:
@@ -198,7 +198,7 @@ def _frame_from_sample(sample: Gst.Sample, expect_fmt: str = "RGBA") -> Tuple[np
 class _InferWriter:
     """Own and protect a live InferenceBufferV2 instance.
 
-    - Maintains per-stream pre-allocated tensors (uint8, CHW, RGB).
+    - Maintains per-stream pre-allocated tensors (uint8, HWC, RGB).
     - Writes with `tensor.copy_()` under a named semaphore.
     """
 
@@ -214,7 +214,7 @@ class _InferWriter:
     def ensure_tensor(self, key: str, h: int, w: int) -> torch.Tensor:
         t = self.buf.images.get(key)
         if t is None or t.dtype != torch.uint8 or tuple(t.shape) != (h, w, 3):
-            # Allocate uint8 CHW RGB on selected device
+            # Allocate uint8 HWC RGB on selected device
             self.buf.images[key] = torch.empty((h, w, 3), dtype=torch.uint8, device=self.device)
             t = self.buf.images[key]
         return t

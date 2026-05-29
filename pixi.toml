@@ -49,8 +49,31 @@ gst_webrtc = { path = ".", editable = true }
 livekit = ">=1.0"
 livekit-api = ">=1.0"
 
+# --- CPU-only CI environment (no CUDA) ---
+# Self-contained so it can install on GPU-less CI runners; gst versions match
+# the default env. Use:  pixi run -e ci pytest -m "not gpu"
+[feature.ci.dependencies]
+python = "3.11.*"
+pygobject = "*"
+gstreamer = ">=1.26"
+gst-plugins-base = ">=1.26"
+gst-plugins-good = ">=1.26"
+gst-plugins-bad = { build = "*4", version = ">=1.26" }
+gst-plugins-ugly = ">=1.26"
+gst-libav = ">=1.26"
+websockets = "*"
+numpy = "*"
+posix_ipc = "*"
+pytest = "*"
+pip = "*"
+pytorch = { version = "==2.7.1", build = "*cpu*" }
+
+[feature.ci.pypi-dependencies]
+gst_webrtc = { path = ".", editable = true }
+
 [environments]
 livekit = ["livekit"]
+ci = { features = ["ci"], no-default-feature = true }
 
 
 [tasks.test]
