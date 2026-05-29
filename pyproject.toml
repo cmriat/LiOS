@@ -1,0 +1,136 @@
+[project]
+name = "gst_webrtc"
+version = "0.0.1"
+description = "GPU-accelerated edge-to-cloud video transport for robot inference: NVENC -> WebRTC -> NVDEC, with a CUDA-IPC zero-copy inference buffer"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { file = "LICENSE" }
+authors = [{ name = "LiOS Authors" }]
+keywords = [
+  "webrtc",
+  "gstreamer",
+  "nvenc",
+  "nvdec",
+  "cuda",
+  "video-streaming",
+  "robotics",
+  "low-latency",
+]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: Apache Software License",
+  "Operating System :: POSIX :: Linux",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Multimedia :: Video",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/cmriat/LiOS"
+Repository = "https://github.com/cmriat/LiOS"
+Issues = "https://github.com/cmriat/LiOS/issues"
+
+[build-system]
+build-backend = "hatchling.build"
+requires = ["hatchling"]
+
+[tool.hatch.build.targets.sdist]
+exclude = [
+  "/.github",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/gst_webrtc"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "-m 'not gpu'"
+markers = [
+  "gpu: requires an NVIDIA GPU and GStreamer nvcodec plugins (run with -m gpu)",
+]
+
+[tool.ruff]
+line-length = 120
+output-format = "grouped"
+target-version = "py310"
+
+src = ["src"]
+
+[tool.ruff.lint]
+select = [
+  # isort
+  "I",
+  # bugbear rules
+  "B",
+  # remove unused imports
+  "F401",
+  # bare except statements
+  "E722",
+  # unused arguments
+  "ARG",
+  # print statements
+  "T201",
+  "T203",
+  # misuse of typing.TYPE_CHECKING
+  "TC004",
+  # import rules
+  "TID251",
+  # docstring
+  "D"
+]
+ignore = [
+  # mutable defaults
+  "B006",
+  # docstring presence/format rules — not enforced for this internal library
+  "D417",
+  "D100",
+  "D101",
+  "D102",
+  "D103",
+  "D104",
+  "D105",
+  "D107",
+  "D205",
+  "D400",
+  "D401",
+  "D415",
+  # incompatible docstring conventions (silence ruff warning)
+  "D203",
+  "D212",
+  "T201",
+]
+unfixable = [
+  # disable auto fix for print statements
+  "T201",
+  "T203",
+]
+
+[tool.ruff.lint.per-file-ignores]
+# re-exports in package __init__ files
+"**/__init__.py" = ["F401"]
+# manual debug/e2e scripts and runnable examples are not held to library lint
+"tests/**" = ["D", "T201", "ARG", "B", "E722"]
+"examples/**" = ["D", "T201", "F401", "ARG"]
+"benchmark/**" = ["D", "T201", "F401", "ARG", "B"]
+
+[tool.ruff.format]
+docstring-code-format = true
+
+# [tool.ruff.lint.isort]
+# known-first-party = ["susser_tod", "common"]
+# length-sort = true
+# length-sort-straight = true
+# combine-as-imports = true
+#
+# [tool.ruff.lint.pydocstyle]
+# convention = "google"
+#
+# [tool.ruff.lint.per-file-ignores]
+# "tests/**.py" = ["ARG001"]

@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+
+jobs:
+  lint:
+    name: ruff lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install ruff==0.15.14
+      - run: ruff check src tests
+
+  test:
+    name: unit tests (CPU)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install CPU-only test deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest numpy posix_ipc
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pip install -e . --no-deps
+      - name: Run unit tests
+        # GPU/GStreamer cases auto-skip: test_gpu_sink uses importorskip("gi");
+        # test_inference_buffer_v2 needs only torch + posix_ipc.
+        run: pytest -m "not gpu" -v
+
+  go-build:
+    name: signal-server build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: signal-server/go.mod
+      - name: Build
+        working-directory: signal-server
+        run: go build -o webrtcssvr .

@@ -1,0 +1,49 @@
+name: Bug report
+description: Report a problem with LiOS
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a report. Please run commands through `pixi run`
+        and include enough detail to reproduce the problem.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A clear description of the bug and its impact.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: Exact commands (sender/receiver/signaling), config, and env vars (ROOM, SIGNAL_URL, FPS…).
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: GPU model, NVIDIA driver, CUDA, GStreamer version, OS, and commit SHA.
+      placeholder: |
+        GPU: RTX 4090 / driver 555.xx / CUDA 12.9
+        GStreamer: 1.26
+        OS: Ubuntu 24.04
+        Commit: abc1234
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: Relevant output. Pipeline issues benefit from `GST_DEBUG=4`.
+      render: shell

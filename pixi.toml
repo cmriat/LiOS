@@ -1,0 +1,89 @@
+[workspace]
+authors = ["GST"]
+channels = ["https://repo.prefix.dev/meta-forge", "conda-forge"]
+name = "gst"
+platforms = ["linux-64"]
+version = "0.1.0"
+
+[system-requirements]
+cuda = "12.9"
+libc = { family = "glibc", version = "2.34" }
+
+[dependencies]
+go = "*"
+python = "3.11.*"
+pygobject = "*"
+jupyterlab = "*"
+gstreamer = ">=1.26"
+gst-plugins-good = ">=1.26"
+gst-plugins-bad = { build = "*4", version = ">=1.26" }
+gst-plugins-ugly = ">=1.26"
+gst-plugins-base = ">=1.26"
+gst-libav = ">=1.26"
+websockets = "*"
+pygobject-stubs = "*"
+cuda = "12.9.*"
+cuda-libraries = "*"
+# ai-edge = "*"
+pip = "*"
+opencv = "*"
+ffmpeg = "*"
+# transformer-engine-torch = "*"
+ipython = "*"
+nvshmem4py = "*"
+nvidia-ml-py = "*"
+pillow = "*"
+pytorch = { version = "==2.7.1", build = "*cuda*" }
+posix_ipc = "*"
+flask = "*"
+pytest = "*"
+ruff = "*"
+
+[pypi-dependencies]
+neopyter = "*"
+gst_webrtc = { path = ".", editable = true }
+
+# --- Optional LiveKit benchmark environment (not installed by default) ---
+# Use:  pixi run -e livekit python benchmark/throughput/livekit_subscriber.py
+[feature.livekit.pypi-dependencies]
+livekit = ">=1.0"
+livekit-api = ">=1.0"
+
+[environments]
+livekit = ["livekit"]
+
+
+[tasks.test]
+# cmd = "gst-launch-1.0 videotestsrc is-live=true pattern=ball ! video/x-raw,width=640,height=480,framerate=30/1 ! videoconvertscale add-borders=true !  video/x-raw,width=224,height=224,pixel-aspect-ratio=1/1  ! autovideosink"
+# cmd = "gst-launch-1.0 v4l2src device=/dev/video4 ! video/x-raw,width=640,height=480,framerate=30/1 ! videoconvertscale add-borders=true !  video/x-raw,width=224,height=224,pixel-aspect-ratio=1/1  ! autovideosink"
+cmd = "gst-launch-1.0 v4l2src device=/dev/video4 ! video/x-raw,width=640,height=480,framerate=30/1 ! videorate ! video/x-raw,framerate=1/1 ! jpegenc quality=95 ! multifilesink \"location=frame-%05d.jpg\""
+
+[tasks."test-scale"]
+# cmd = "gst-launch-1.0 videotestsrc is-live=true pattern=ball ! video/x-raw,width=640,height=480,framerate=30/1 ! videoconvertscale add-borders=true !  video/x-raw,width=224,height=224,pixel-aspect-ratio=1/1  ! autovideosink"
+cmd = "gst-launch-1.0 v4l2src device=/dev/video4 ! video/x-raw,width=640,height=480,framerate=30/1,format=YUY2 ! videoconvert ! video/x-raw,format=NV12 ! cudaupload ! 'video/x-raw(memory:CUDAMemory)' ! cudaconvertscale add-borders=true ! 'video/x-raw(memory:CUDAMemory),width=224,height=224,pixel-aspect-ratio=1/1' ! cudadownload ! videorate ! video/x-raw,framerate=1/1 ! jpegenc quality=95 ! multifilesink \"location=frame-%05d.jpg\" "
+
+[tasks.ctr]
+cmd = "docker build -t meta-forge --build-arg USER=$(whoami) dockerfiles && docker run -it --rm -v $HOME:$HOME -e HOME=$HOME -v /dev:/dev/ -v /tmp/.X11-unix:/tmp/.X11-unix -e DISPLAY=$DISPLAY --privileged meta-forge"
+description = "Build and run Docker container with mounted workspace and home directory"
+# ENV GI_TYPELIB_PATH=/usr/lib/x86_64-linux-gnu/girepository-1.0 \
+#   GST_PLUGIN_PATH=/usr/lib/x86_64-linux-gnu/gstreamer-1.0 \
+#   GST_PLUGIN_SYSTEM_PATH=/usr/lib/x86_64-linux-gnu/gstreamer-1.0 \
+#   PYTHONPATH="/usr/lib/python3/dist-packages:${PYTHONPATH}"
+
+[activation.env]
+GST_DEBUG = "3"
+OMP_NUM_THREADS = "3"
+# GST_TRACERS="latency(flags=pipeline+element)" 
+# GST_DEBUG= "3,GST_TRACER:7"
+# GI_TYPELIB_PATH = "/usr/lib/x86_64-linux-gnu/girepository-1.0"
+# GST_PLUGIN_PATH = "/usr/lib/x86_64-linux-gnu/gstreamer-1.0"
+# GST_PLUGIN_SYSTEM_PATH = "/usr/lib/x86_64-linux-gnu/gstreamer-1.0"
+# PYTHONPATH = "/usr/lib/python3/dist-packages:${PYTHONPATH}"
+
+[tasks.pytest]
+cmd = "pytest"
+description = "Run the unit test suite (GPU tests skipped unless run with -m gpu)"
+
+[tasks.e2e]
+cmd = "./tests/e2e/smoke.sh"
+description = "Run E2E smoke test (local signal server, headless sender/receiver)"

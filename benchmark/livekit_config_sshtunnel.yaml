@@ -1,0 +1,26 @@
+# LiveKit dev server for the "over-TCP (SSH 隧道直连)" latency bar.
+# Runs on admin01, bound to loopback, pinned to a SINGLE UDP mux port (7882) and
+# advertising 127.0.0.1. The peer (remote) reaches the media via a socat
+# UDP-over-TCP bridge tunnelled through SSH (see cross_lk_sshtunnel_bidir.sh):
+#   remote client UDP:7882 -> socat -> TCP:7883 -> ssh tunnel -> admin01 socat
+#   -> UDP:7882 (this server). No 114.x relay, no LiveKit Cloud.
+#   /tmp/livekit-server --config benchmark/livekit_config_sshtunnel.yaml
+port: 7880
+rtc:
+  # Single UDP mux port so the whole media path is one tunnellable UDP flow.
+  udp_port: 7882
+  # Advertise loopback: both the local client and the tunneled remote client
+  # dial the server (and its UDP candidate) via 127.0.0.1.
+  node_ip: 127.0.0.1
+  use_external_ip: false
+  # ICE-lite: the server only RESPONDS to connectivity checks, never initiates.
+  # Without this, the server tries to reach the remote client's real host/srflx
+  # candidates (e.g. 10.32.x / 114.x) which admin01 cannot route to, and never
+  # selects the loopback path that the socat UDP-over-TCP bridge actually carries.
+  use_ice_lite: true
+turn:
+  enabled: false
+keys:
+  devkey: "0123456789abcdef0123456789abcdef"
+logging:
+  level: info
