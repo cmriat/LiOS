@@ -30,8 +30,8 @@ def h264_decode_bin_sink() -> str:
     desc = f"""
 capsfilter caps="application/x-rtp" ! rtph264depay ! h264parse !
 {queue} !
-nvh264dec ! {queue} !
-videoconvert ! autovideosink
+avdec_h264 ! {queue} !
+videoconvert ! fakesink sync=false
 """
     return desc
 
