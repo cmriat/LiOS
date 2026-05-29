@@ -324,11 +324,10 @@ class WebRTCSender:
         elif nick == "failed":
             self._restart_ice()
         else:
-            # If disconnected persists >3s, restart ICE
+            # If disconnected persists >1s, restart ICE
             if self._ice_disconnected_at is not None:
                 import time as _t
 
-                # Faster reaction: 1.0s
                 if _t.time() - self._ice_disconnected_at > 1.0:
                     self._restart_ice()
 

@@ -41,14 +41,12 @@ class GpuFrameSink:
         output_format: str = "RGBA",
         queue_size: int = 4,
         drop_when_full: bool = True,
-        copy_frame: bool = True,
     ) -> None:
         if output_format not in {"RGBA", "RGB", "BGR", "GRAY8"}:
             raise ValueError("output_format must be one of RGBA|RGB|BGR|GRAY8")
         self.name = name or f"appsink-{uuid.uuid4().hex[:8]}"
         self.output_format = output_format
         self.drop_when_full = drop_when_full
-        self.copy_frame = copy_frame
 
         self._q: "queue.Queue[Frame]" = queue.Queue(maxsize=max(1, queue_size))
         self._sink: Optional[Gst.Element] = None
@@ -203,11 +201,7 @@ class GpuFrameSink:
                 return Gst.FlowReturn.OK
             try:
                 arr = self._map_to_numpy(map_info, width, height, str(fmt))
-                # Always copy to ensure safety across threads and buffer reuse.
-                if not self.copy_frame:
-                    # Minimal impl note: zero-copy is unsafe without keeping the buffer mapped.
-                    # Fallback to copy for correctness.
-                    pass
+                # Always copy: zero-copy is unsafe without keeping the buffer mapped.
                 arr = arr.copy()
             finally:
                 buffer.unmap(map_info)
