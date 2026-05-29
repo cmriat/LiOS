@@ -6,7 +6,7 @@ Run:
   pixi run python tests/e2e/gpu_sink_save.py --frames 5 --out ./frames_gpu
 
 Prereqs:
-  - Start signaling server (see project docs) and a sender (`tests/e2e/sender.py`).
+  - Start signaling server (see project docs) and a sender (`tests/e2e/sender_sw.py`).
   - Pillow is recommended: `pixi run python -m pip install pillow` if missing.
 """
 
@@ -81,7 +81,6 @@ async def main(nframes: int, out_dir: Path, out_fmt: str, timeout: float) -> Non
                 continue
 
             arr: np.ndarray = frame.array
-            h, w = arr.shape[:2]
             info = {
                 "shape": arr.shape,
                 "dtype": str(arr.dtype),

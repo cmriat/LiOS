@@ -6,47 +6,22 @@ import time
 import gi
 
 gi.require_version("Gst", "1.0")
-gi.require_version("GstWebRTC", "1.0")
-gi.require_version("GstSdp", "1.0")
 
-from gi.repository import Gst, GstSdp, GstWebRTC  # noqa: F401
+from gi.repository import Gst
 
 from gst_webrtc import init_gst
 from gst_webrtc.sender import WebRTCSender
-from gst_webrtc.ws_signal.signal_client import SignalClient  # noqa: F401
 
 ROOM = os.environ.get("ROOM", "demo")
 SIGNAL_URL = os.environ.get("SIGNAL_URL", "ws://127.0.0.1:18080/ws")
 STUN = os.environ.get("STUN", "stun://stun.example.com")
 TURN = os.environ.get(
     "TURN", "turn://USERNAME:PASSWORD@TURN_HOST:3478?transport=udp"
-)  # not used
+)
 
 init_gst()
 
-wh = "width=640,height=480"
-fr = "framerate=30/1"
 queue = "queue max-size-buffers=1 max-size-time=0 max-size-bytes=0 leaky=downstream"
-
-
-def create_test_video_source(name: str) -> str:
-    """Build a low-latency H264 RTP source with an identifiable name.
-
-    NOTE: We insert an `identity name=<name>` so the multi-source case is easy to
-    debug on the sender side. This does not affect WebRTC semantics directly,
-    but helps correlate logs and pads per source.
-    """
-    src = f"""\
-videotestsrc is-live=true pattern=ball ! video/x-raw,{wh},{fr} ! \
-identity name={name} silent=true ! \
-{queue} ! \
-nvh264enc ! \
-h264parse config-interval=-1 ! video/x-h264,alignment=au ! \
-{queue} ! \
-rtph264pay aggregate-mode=zero-latency pt=96 ! \
-capsfilter caps=\"application/x-rtp,media=video,encoding-name=H264,payload=96,clock-rate=90000\"
-"""
-    return src
 
 
 # RealSense D405 color stream parameters (pushed into GStreamer via appsrc).

@@ -17,7 +17,6 @@ from __future__ import annotations
 import argparse
 import asyncio
 import pathlib
-import sys
 from typing import Dict, List
 
 import numpy as np
@@ -36,11 +35,6 @@ gi.require_version("GstWebRTC", "1.0")
 gi.require_version("GstSdp", "1.0")
 gi.require_version("GstApp", "1.0")
 from gi.repository import Gst, GstApp  # type: ignore
-
-# Ensure project root on sys.path when running from tests/e2e/
-ROOT = pathlib.Path(__file__).resolve().parents[2]
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
 
 from gst_webrtc import init_gst
 from gst_webrtc.receiver import WebRTCReceiver

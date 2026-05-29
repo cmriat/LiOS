@@ -37,9 +37,9 @@ from gst_webrtc.receiver import WebRTCReceiver
 
 
 def _rtp_h264_to_appsink_desc(appsink_name: str = "recv_app", to_format: str = "RGBA") -> str:
-    # Keep CPU decode for stability across environments
+    # CPU decode for stability across environments (no GPU context needed)
     q = "queue max-size-buffers=1 max-size-time=0 max-size-bytes=0 leaky=downstream"
-    dec = f"nvh264dec ! {q}"
+    dec = f"avdec_h264 ! {q}"
     return (
         f"capsfilter caps=\"application/x-rtp\" ! rtph264depay ! h264parse ! "
         f"{dec} ! videoconvert ! video/x-raw,format={to_format} ! {q} ! "
@@ -58,7 +58,6 @@ def _frame_from_sample(sample: Gst.Sample, expect_fmt: str = "RGBA") -> np.ndarr
     s = caps.get_structure(0) if caps else None
     width = int(s.get_value("width")) if s and s.has_field("width") else 0
     height = int(s.get_value("height")) if s and s.has_field("height") else 0
-    fmt = str(s.get_value("format")) if s and s.has_field("format") else expect_fmt
 
     ok, map_info = buf.map(Gst.MapFlags.READ)
     if not ok:
@@ -72,14 +71,9 @@ def _frame_from_sample(sample: Gst.Sample, expect_fmt: str = "RGBA") -> np.ndarr
         bpr = nbytes // height
         row_pixels = bpr // ch if ch > 0 else 0
         arr = np.frombuffer(mv, dtype=np.uint8)
-        if ch == 4:
-            arr = arr.reshape(height, row_pixels, 4)
-            if width > 0 and row_pixels != width:
-                arr = arr[:, :width, :]
-        else:
-            arr = arr.reshape(height, row_pixels, 3)
-            if width > 0 and row_pixels != width:
-                arr = arr[:, :width, :]
+        arr = arr.reshape(height, row_pixels, ch)
+        if width > 0 and row_pixels != width:
+            arr = arr[:, :width, :]
         return arr.copy()
     finally:
         buf.unmap(map_info)
