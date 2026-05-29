@@ -94,6 +94,9 @@ Config is read from `.env` (or the environment, which wins): `ROOM`, `SIGNAL_URL
 `VIDEO_SOURCE=v4l2` and `CAMERAS=mid=/dev/video0@30,left=/dev/video4@25`. Set `GST_DEBUG=4`
 to debug the pipeline.
 
+For the full walkthrough — cross-machine deployment, coturn/TURN setup, real cameras, live
+preview, and troubleshooting — see **[USER_GUIDE.md](USER_GUIDE.md)** · [简体中文](USER_GUIDE.zh-CN.md).
+
 ---
 
 ## Benchmarks

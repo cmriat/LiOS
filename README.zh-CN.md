@@ -60,11 +60,19 @@ pixi run python examples/two_cemera_sender.py
 
 # 3) 启动接收端（云端 GPU：解码 → CUDA → InferenceBufferV2）
 pixi run python examples/two_cemera_receiver_inferbuf.py --streams 2
+
+# 4) 浏览器看实时预览（接收端自动提供）
+#    http://127.0.0.1:5082/api/v1/preview          （MJPEG 流）
+#    http://127.0.0.1:5082/api/v1/preview?cam=cam0&fps=15
+#    想从别的机器看，第 3 步前设 FLASK_HOST=0.0.0.0
 ```
 
 配置从 `.env`（或环境变量，环境变量优先）读取：`ROOM`、`SIGNAL_URL`、`STUN`、`TURN`，以及
 `VIDEO_SOURCE`（`test` | `v4l2`）和 `CAMERAS`。用真实相机时设 `VIDEO_SOURCE=v4l2`、
 `CAMERAS=mid=/dev/video0@30,left=/dev/video4@25`。设 `GST_DEBUG=4` 调试管线。
+
+完整教程——跨机部署、coturn/TURN 配置、真实相机、实时预览、故障排查——见
+**[USER_GUIDE.zh-CN.md](USER_GUIDE.zh-CN.md)** · [English](USER_GUIDE.md)。
 
 ---
 
