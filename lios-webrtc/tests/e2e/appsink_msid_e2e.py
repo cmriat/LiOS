@@ -23,6 +23,7 @@ import numpy as np
 
 try:
     from PIL import Image  # type: ignore
+
     _HAS_PIL = True
 except Exception:
     Image = None  # type: ignore
@@ -70,7 +71,7 @@ def rtp_h264_to_appsink_desc(appsink_name: str = "recv_app", to_format: str = "R
     q = "queue max-size-buffers=1 max-size-time=0 max-size-bytes=0 leaky=downstream"
     dec = f"avdec_h264 ! {q}"
     return (
-        f"capsfilter caps=\"application/x-rtp\" ! rtph264depay ! h264parse ! {q} ! "
+        f'capsfilter caps="application/x-rtp" ! rtph264depay ! h264parse ! {q} ! '
         f"{dec} ! videoconvert ! video/x-raw,format={to_format} ! {q} ! "
         f"appsink name={appsink_name} emit-signals=true sync=false max-buffers=1 drop=true"
     )
@@ -136,6 +137,7 @@ async def main(names: List[str], frames: int, out_dir: pathlib.Path, timeout: fl
     expected = set(names)
     discovered: Dict[str, Gst.Element] = {}
     deadline = asyncio.get_event_loop().time() + timeout
+
     def _collect_appsinks(container: Gst.Bin) -> None:
         it = container.iterate_recurse()
         try:

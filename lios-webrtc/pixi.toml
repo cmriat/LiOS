@@ -43,7 +43,7 @@ ruff = "*"
 gst_webrtc = { path = ".", editable = true }
 
 # --- Optional LiveKit benchmark environment (not installed by default) ---
-# Use:  pixi run -e livekit python benchmark/throughput/livekit_subscriber.py
+# Use:  pixi run -e livekit python benchmark/livekit/livekit_subscriber.py
 [feature.livekit.pypi-dependencies]
 livekit = ">=1.0"
 livekit-api = ">=1.0"

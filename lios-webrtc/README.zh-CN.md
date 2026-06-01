@@ -54,10 +54,10 @@ cp .env.example .env   # example 会自动加载 .env；默认配置无需真实
 cd signal-server && go build -o webrtcssvr . && ./webrtcssvr serve --addr :18080
 
 # 2) 启动发送端（边缘 GPU）。默认 VIDEO_SOURCE=test 用 videotestsrc，无需相机。
-pixi run python examples/two_cemera_sender.py
+pixi run python examples/two_camera_sender.py
 
 # 3) 启动接收端（云端 GPU：解码 → CUDA → InferenceBufferV2）
-pixi run python examples/two_cemera_receiver_inferbuf.py --streams 2
+pixi run python examples/two_camera_receiver_inferbuf.py --streams 2
 
 # 4) 浏览器看实时预览（接收端自动提供）
 #    http://127.0.0.1:5082/api/v1/preview          （MJPEG 流）
@@ -127,6 +127,7 @@ pixi run python examples/two_cemera_receiver_inferbuf.py --streams 2
 - [`design.md`](design.md) — 组件架构与各模块职责
 - [`docs/gst-report/`](docs/gst-report/) — 图传性能实验报告（延迟 + 吞吐）
 - [`AGENTS.md`](AGENTS.md) — 开发约定
+- [`CONTRIBUTING.md`](CONTRIBUTING.md) — 开发环境、lint、测试与 PR 流程
 
 ---
 

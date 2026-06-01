@@ -84,10 +84,10 @@ x264 软编;`DECODER=auto` 同理(有 `nvh264dec` 用 NVDEC,否则 `avdec_h264`)
 cd signal-server && go build -o webrtcssvr . && ./webrtcssvr serve --addr :18080
 
 # 终端 2 —— 接收端(先起,等流)
-pixi run python examples/two_cemera_receiver_inferbuf.py --streams 2
+pixi run python examples/two_camera_receiver_inferbuf.py --streams 2
 
 # 终端 3 —— 发送端(videotestsrc 测试图)
-pixi run python examples/two_cemera_sender.py
+pixi run python examples/two_camera_sender.py
 ```
 
 > 同机如果不想配 TURN,可把 `.env` 的 `TURN` 留占位符——localhost 一般能走主机候选直连。
@@ -108,7 +108,7 @@ FLASK_HOST=0.0.0.0                      # 想从别的机器看预览就设 0.0.
 ```
 ```bash
 cd signal-server && go build -o webrtcssvr . && ./webrtcssvr serve --addr :18080   # 终端1
-pixi run python examples/two_cemera_receiver_inferbuf.py --streams 2                # 终端2
+pixi run python examples/two_camera_receiver_inferbuf.py --streams 2                # 终端2
 ```
 
 **机器 A(边缘):跑 sender**
@@ -120,7 +120,7 @@ TURN=turn://USER:PASS@TURN_HOST:3478?transport=udp
 VIDEO_SOURCE=test
 ```
 ```bash
-pixi run python examples/two_cemera_sender.py
+pixi run python examples/two_camera_sender.py
 ```
 
 **跨机必须打通的两件事:**
@@ -225,13 +225,13 @@ sender 日志走到 `connection state: connected`、receiver 持续刷 `frame ..
    WIDTH=640
    HEIGHT=480
    ```
-3. 启动 sender:`pixi run python examples/two_cemera_sender.py`
+3. 启动 sender:`pixi run python examples/two_camera_sender.py`
 
 **注意点:**
 - 流的名字(`mid`/`left`)会作为 msid 传到接收端,接收端用它当推理缓冲的 key,也用于
   HTTP 预览的 `?cam=` 选择。
 - example 的 v4l2 管线请求的是 `format=YUY2`。如果你的相机只支持 MJPG/其它格式,这条会失败;
-  需要相应改 `examples/two_cemera_sender.py` 里 `v4l2_source()` 的 caps(把 `format=YUY2`
+  需要相应改 `examples/two_camera_sender.py` 里 `v4l2_source()` 的 caps(把 `format=YUY2`
   换成相机支持的,或插 `jpegdec`)。
 - 分辨率/帧率必须是相机真实支持的组合(用上面的 `--list-formats-ext` 确认)。
 
@@ -325,10 +325,10 @@ DECODER=sw
 cd signal-server && go build -o webrtcssvr . && ./webrtcssvr serve --addr :18080
 
 # 接收端(N 路,监听所有网卡的 5082 以便远程看预览)
-FLASK_HOST=0.0.0.0 pixi run python examples/two_cemera_receiver_inferbuf.py --streams 2
+FLASK_HOST=0.0.0.0 pixi run python examples/two_camera_receiver_inferbuf.py --streams 2
 
 # 发送端(测试图 / 真实相机由 .env 的 VIDEO_SOURCE 决定)
-pixi run python examples/two_cemera_sender.py
+pixi run python examples/two_camera_sender.py
 
 # 浏览器实时看画面
 #   http://<接收端IP>:5082/api/v1/preview

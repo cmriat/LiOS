@@ -5,9 +5,10 @@ Counts figures/sec at the same logical point as the gst-webrtc receiver: a decod
 frame handed to the application. (LiveKit decodes on CPU via libwebrtc — noted in
 the README as a fairness caveat vs gst-webrtc's NVDEC.)
 
-Run:  pixi run -e livekit python benchmark/throughput/livekit_subscriber.py
+Run:  pixi run -e livekit python benchmark/livekit/livekit_subscriber.py
 Env:  LK_URL, LK_KEY, LK_SECRET, LK_ROOM, DURATION, WARMUP
 """
+
 import asyncio
 import os
 import sys

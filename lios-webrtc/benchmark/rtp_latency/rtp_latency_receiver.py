@@ -9,6 +9,7 @@ Usage (envs):
 Note: This measures one-way latency and assumes clocks are comparable if
 sender and receiver run on different hosts. For precise OWD, sync clocks.
 """
+
 import os
 import time
 
@@ -26,9 +27,7 @@ Gst.init(None)
 
 
 def build_pipeline():
-    caps = (
-        f"application/x-rtp,media=audio,clock-rate={RATE},encoding-name=L16,channels=1"
-    )
+    caps = f"application/x-rtp,media=audio,clock-rate={RATE},encoding-name=L16,channels=1"
     desc = f"""
 udpsrc address=0.0.0.0 port={LISTEN_PORT} caps="{caps}" ! 
   rtpjitterbuffer mode=1 latency=50 drop-on-late=true do-retransmission=false ! 
@@ -39,7 +38,6 @@ udpsrc address=0.0.0.0 port={LISTEN_PORT} caps="{caps}" !
 
 
 def on_new_sample(appsink):
-
     sample = appsink.emit("pull-sample")
     if not sample:
         return Gst.FlowReturn.ERROR
@@ -79,4 +77,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

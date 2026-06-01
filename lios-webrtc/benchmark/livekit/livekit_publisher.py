@@ -7,6 +7,7 @@ LiveKit server (SFU) forwards the encoded track to subscribers.
 Run:  pixi run -e livekit python benchmark/throughput/livekit_publisher.py
 Env:  LK_URL, LK_KEY, LK_SECRET, LK_ROOM, W, H, FPS, DURATION
 """
+
 import asyncio
 import os
 import time
@@ -67,7 +68,7 @@ async def main() -> None:
         print(f"[lk-pub] clip={clip} nfr={nfr} (I420, 同一段)", flush=True)
         while time.time() - t0 < DURATION:
             off = (n % nfr) * fsz
-            frame = rtc.VideoFrame(W, H, rtc.VideoBufferType.I420, data[off:off + fsz])
+            frame = rtc.VideoFrame(W, H, rtc.VideoBufferType.I420, data[off : off + fsz])
             source.capture_frame(frame)
             n += 1
             next_t += period

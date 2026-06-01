@@ -30,7 +30,7 @@ def drain_until(queue, pred, timeout: float = 5.0):
 
 
 def main():
-    logging.basicConfig(level=logging.INFO, format='[%(levelname)s] %(message)s')
+    logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(message)s")
     # Start server with short heartbeat for quick E2E
     srv = JSONWebSocketAPIServer(host="127.0.0.1", port=0, heartbeat_interval=0.5)
     srv.start()

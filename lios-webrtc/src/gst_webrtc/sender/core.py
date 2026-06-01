@@ -44,10 +44,8 @@ class WebRTCSender:
         self.room = room or os.environ.get("ROOM", "demo")
         self.peer_id = peer_id or os.environ.get("PEER_ID", f"sender-{os.getpid()}")
         self.signal_url = signal_url or os.environ.get("SIGNAL_URL", "ws://127.0.0.1:18080/ws")
-        self.stun = stun or os.environ.get("STUN", "stun://stun.example.com")
-        self.turn = turn or os.environ.get(
-            "TURN", "turn://USERNAME:PASSWORD@TURN_HOST:3478?transport=udp"
-        )
+        self.stun = stun or os.environ.get("STUN", "stun://stun.l.google.com:19302")
+        self.turn = turn or os.environ.get("TURN", "turn://USERNAME:PASSWORD@TURN_HOST:3478?transport=udp")
         self.latency_ms = latency_ms
 
         self.pipe = Gst.Pipeline.new("webrtc-send-pipeline")
@@ -222,24 +220,14 @@ class WebRTCSender:
                     if sdp_txt:
                         _, sdp = GstSdp.SDPMessage.new()
                         GstSdp.sdp_message_parse_buffer(sdp_txt.encode(), sdp)
-                        answer = GstWebRTC.WebRTCSessionDescription.new(
-                            GstWebRTC.WebRTCSDPType.ANSWER, sdp
-                        )
-                        self.webrtc.emit(
-                            "set-remote-description", answer, Gst.Promise.new()
-                        )
+                        answer = GstWebRTC.WebRTCSessionDescription.new(GstWebRTC.WebRTCSDPType.ANSWER, sdp)
+                        self.webrtc.emit("set-remote-description", answer, Gst.Promise.new())
                         print("[webrtc] set remote description (answer)")
 
                 elif env.type == "candidate":
                     payload = env.data or {}
-                    cand = (
-                        payload.get("candidate") if isinstance(payload, dict) else None
-                    )
-                    mline = (
-                        int(payload.get("sdpMLineIndex", 0))
-                        if isinstance(payload, dict)
-                        else 0
-                    )
+                    cand = payload.get("candidate") if isinstance(payload, dict) else None
+                    mline = int(payload.get("sdpMLineIndex", 0)) if isinstance(payload, dict) else 0
                     if cand:
                         self.webrtc.emit("add-ice-candidate", mline, cand)
                         # print("[webrtc] add ice candidate")
@@ -313,7 +301,7 @@ class WebRTCSender:
     def _on_ice_state(self, _webrtc, _pspec) -> None:
         st = self.webrtc.get_property("ice-connection-state")
         nick = getattr(st, "value_nick", str(st))
-        # Lightweight version of L0-L2 policy from restore.md
+        # Lightweight version of the L0-L2 policy (see docs/design/RESTORE_DESIGN.md)
         if nick == "disconnected" and self._ice_disconnected_at is None:
             import time as _t
 
@@ -484,9 +472,11 @@ class WebRTCSender:
         try:
             import time as _t
 
-            if self._ice_restart_deadline and (
-                self.webrtc.get_property("connection-state").value_nick != "connected"
-            ) and _t.time() > self._ice_restart_deadline:
+            if (
+                self._ice_restart_deadline
+                and (self.webrtc.get_property("connection-state").value_nick != "connected")
+                and _t.time() > self._ice_restart_deadline
+            ):
                 print("[webrtc] ICE restart did not recover; performing full reset")
                 self._ice_restart_deadline = None
                 self._full_reset_webrtc()

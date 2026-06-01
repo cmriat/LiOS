@@ -78,8 +78,8 @@ class InferenceBufferV2:
     meta: MutableMapping[str, Any] = field(default_factory=dict)
     # Name of POSIX semaphores. Keep `sem_name` for backward compatibility and
     # treat it as the images (video) semaphore. Add a dedicated state semaphore.
-    sem_name: Optional[str] = None              # legacy/images lock name
-    sem_state_name: Optional[str] = None        # state lock name
+    sem_name: Optional[str] = None  # legacy/images lock name
+    sem_state_name: Optional[str] = None  # state lock name
 
     # Internal, non-serializable handles
     _sem_images: Optional[posix_ipc.Semaphore] = field(default=None, init=False, repr=False, compare=False)
@@ -164,7 +164,9 @@ class InferenceBufferV2:
         return f"/ifbuf_{uuid.uuid4().hex}"
 
     # ----- Low-level open helpers for each semaphore -----
-    def _open_or_create_images_sem(self, *, create: bool, initial_value: int = 1, exclusive: bool = False) -> posix_ipc.Semaphore:
+    def _open_or_create_images_sem(
+        self, *, create: bool, initial_value: int = 1, exclusive: bool = False
+    ) -> posix_ipc.Semaphore:
         if create:
             if not self.sem_name:
                 self.sem_name = self._gen_sem_name()
@@ -176,7 +178,9 @@ class InferenceBufferV2:
         self._sem_images = posix_ipc.Semaphore(self.sem_name)
         return self._sem_images
 
-    def _open_or_create_state_sem(self, *, create: bool, initial_value: int = 1, exclusive: bool = False) -> posix_ipc.Semaphore:
+    def _open_or_create_state_sem(
+        self, *, create: bool, initial_value: int = 1, exclusive: bool = False
+    ) -> posix_ipc.Semaphore:
         if create:
             if not self.sem_state_name:
                 self.sem_state_name = self._gen_sem_name()
@@ -355,6 +359,7 @@ class InferenceBufferV2:
 
 
 # -------- Module-level stateless helpers (no class required by receiver) --------
+
 
 def pack_base64(
     *,

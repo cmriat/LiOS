@@ -13,7 +13,7 @@ PyTorch、GStreamer 1.26、posix_ipc、pytest、ruff 等）。
 - 跑测试：`pixi run pytest`（GPU 用例默认跳过；只跑 GPU 用例：`pixi run pytest -m gpu`）
 - 跑 lint：`pixi run ruff check src tests`
 - 起信令服务：`cd signal-server && go build -o webrtcssvr . && ./webrtcssvr serve --addr :18080`
-- LiveKit 基准（独立环境）：`pixi run -e livekit python benchmark/throughput/livekit_subscriber.py`
+- LiveKit 基准（独立环境）：`pixi run -e livekit python benchmark/livekit/livekit_subscriber.py`
 
 ## 其它
 

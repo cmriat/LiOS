@@ -3,6 +3,7 @@
 ~700fps 以下计数准(GIL); 片段测试帧率远低于此。
 Env: ROOM SIGNAL_URL STUN TURN DURATION WARMUP
 """
+
 import asyncio
 import os
 import time
@@ -59,6 +60,7 @@ async def main() -> None:
                 if now - st["t_ms"] >= DURATION and st["end"] is None:
                     st["end"] = now
             return Gst.FlowReturn.OK
+
         return _cb
 
     task = asyncio.create_task(rx.run())

@@ -16,7 +16,7 @@ from gst_webrtc.sender.core import WebRTCSender
 
 ROOM = os.environ.get("ROOM", "demo")
 SIGNAL_URL = os.environ.get("SIGNAL_URL", "ws://127.0.0.1:18080/ws")
-STUN = os.environ.get("STUN", "stun://stun.example.com")
+STUN = os.environ.get("STUN", "stun://stun.l.google.com:19302")
 TURN = os.environ.get("TURN", "turn://USERNAME:PASSWORD@TURN_HOST:3478?transport=udp")
 
 
@@ -28,9 +28,7 @@ QUEUE = "queue max-size-buffers=1 max-size-time=0 max-size-bytes=0 leaky=downstr
 
 # Encoder: auto-detect nvh264enc, fall back to x264enc on GPUs w/o NVENC (e.g. H20Z).
 Gst.init(None)
-_ENCODER = os.environ.get("ENCODER") or (
-    "nvh264enc" if Gst.ElementFactory.find("nvh264enc") else "x264enc"
-)
+_ENCODER = os.environ.get("ENCODER") or ("nvh264enc" if Gst.ElementFactory.find("nvh264enc") else "x264enc")
 
 
 def _enc_chain() -> str:
@@ -124,4 +122,3 @@ async def main() -> None:
 
 if __name__ == "__main__":
     asyncio.run(main())
-

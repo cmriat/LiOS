@@ -129,8 +129,6 @@ flowchart LR
 **设计文档**
 - [`docs/design/gpu-sink.md`](docs/design/gpu-sink.md) — GPU Frame Sink 设计
 - [`docs/design/RESTORE_DESIGN.md`](docs/design/RESTORE_DESIGN.md) — webrtcbin 通用断流恢复策略
-- [`src/gst_webrtc/receiver/DESIGN.md`](src/gst_webrtc/receiver/DESIGN.md) — 接收端精简设计
-- [`src/gst_webrtc/sender/RECONNECT_DESIGN.md`](src/gst_webrtc/sender/RECONNECT_DESIGN.md) — 发送端断连恢复（落地）
 
 **使用文档**
 - [`docs/usage/gpu-sink.md`](docs/usage/gpu-sink.md) — GPU Frame Sink 用法

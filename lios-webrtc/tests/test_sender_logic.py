@@ -39,6 +39,7 @@ def _handle(bin_):
 
 # --------------------------- linked sources -----------------------------
 
+
 def test_has_linked_sources_empty():
     assert make_sender()._has_linked_sources() is False
 
@@ -56,6 +57,7 @@ def test_has_linked_sources_false_when_unlinked_or_missing():
 
 
 # ------------------------------ _send_offer -----------------------------
+
 
 @pytest.mark.parametrize(
     "mutate",
@@ -83,6 +85,7 @@ def test_send_offer_emits_create_offer_and_sets_flag():
 
 
 # --------------------------- negotiate routing --------------------------
+
 
 def test_maybe_negotiate_guard_blocks(monkeypatch):
     s = make_sender()
@@ -125,6 +128,7 @@ def test_on_negotiation_needed_respects_linked_sources(monkeypatch):
 
 # ----------------------------- local ICE out ----------------------------
 
+
 def test_on_ice_candidate_sends_when_ready():
     s = make_sender()
     s._on_ice_candidate(None, 1, "cand")
@@ -139,6 +143,7 @@ def test_on_ice_candidate_noop_without_remote():
 
 
 # --------------------------- ICE state machine --------------------------
+
 
 def test_ice_state_disconnected_records_timestamp(monkeypatch):
     s = make_sender()
@@ -179,6 +184,7 @@ def test_ice_state_prolonged_disconnect_triggers_restart(monkeypatch):
 
 
 # ------------------------------ restart / tick --------------------------
+
 
 def test_restart_ice_guarded_while_making_offer(monkeypatch):
     s = make_sender()

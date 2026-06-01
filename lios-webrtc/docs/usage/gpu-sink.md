@@ -8,7 +8,7 @@
 
 前置：
 - 按仓库根的 AGENTS.md 完成环境：`pixi install && pixi shell`。
-- 启动信令：`cd signal-server && go build -o signalsrv . && ./signalsrv serve --addr :18080`。
+- 启动信令：`cd signal-server && go build -o webrtcssvr . && ./webrtcssvr serve --addr :18080`。
 - 启动发送端（参考 `tests/e2e/sender.py`）。
 
 在接收端中使用 `GpuFrameSink`：
@@ -22,7 +22,7 @@ from gst_webrtc.gpu_sink import GpuFrameSink
 
 ROOM = os.environ.get("ROOM", "demo")
 SIGNAL_URL = os.environ.get("SIGNAL_URL", "ws://127.0.0.1:18080/ws")
-STUN = os.environ.get("STUN", "stun://stun.example.com")
+STUN = os.environ.get("STUN", "stun://stun.l.google.com:19302")
 
 init_gst()
 
@@ -83,7 +83,7 @@ pixi run python examples/recv_gpu_sink.py
 
 ## 实现备注（当前最小版本）
 
-- 回调中总是 `copy()` 一份独立的 `numpy` 数组，确保线程安全和避免 buffer 生命周期问题；`copy_frame=False` 目前按兼容处理，依然会拷贝。
+- 回调中总是 `copy()` 一份独立的 `numpy` 数组，确保线程安全并避免 buffer 生命周期问题。
 - 若底层帧行对齐导致行跨度（stride）大于 `width*channels`，实现会以 `height×(stride/channels)` 的形状读入并在列上裁切到 `width`，以保证输出数组形状与语义正确。
 
 ## 故障排查

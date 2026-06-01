@@ -76,7 +76,8 @@ def main() -> int:
     msg = parent_conn.recv()
     if msg[0] == "child_error":
         print(f"FAIL: child raised: {msg[1]}")
-        proc.terminate(); proc.join(5)
+        proc.terminate()
+        proc.join(5)
         return 6
     tag, mean1 = msg
     assert tag == "done1"
@@ -86,7 +87,8 @@ def main() -> int:
         print(f"child->parent CUDA propagation: child_mean={mean1:.6f} parent_allclose={ok1}")
         if not ok1:
             print("FAIL: Parent did not observe child's CUDA write.")
-            proc.terminate(); proc.join(5)
+            proc.terminate()
+            proc.join(5)
             return 2
     else:
         print(f"child wrote mean={mean1:.6f} on CPU (sharing not required)")
@@ -100,7 +102,8 @@ def main() -> int:
     msg = parent_conn.recv()
     if msg[0] == "child_error":
         print(f"FAIL: child raised: {msg[1]}")
-        proc.terminate(); proc.join(5)
+        proc.terminate()
+        proc.join(5)
         return 7
     tag, mean2, ok2 = msg
     assert tag == "seen2"
@@ -108,7 +111,8 @@ def main() -> int:
         print(f"parent->child CUDA propagation: child_mean={mean2:.6f} child_allclose={ok2}")
         if not ok2:
             print("FAIL: Child did not observe parent's CUDA write.")
-            proc.terminate(); proc.join(5)
+            proc.terminate()
+            proc.join(5)
             return 3
     else:
         print(f"parent wrote v2={v2:.4f} on CPU; child_mean={mean2:.6f} (no share check)")
@@ -125,4 +129,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

@@ -6,6 +6,7 @@ delivered to the application/consumer, end-to-end (capture -> encode -> network
 benchmarks count frames at the same logical point: a decoded frame handed to the
 application. A warmup window is skipped so we measure steady state, not ramp-up.
 """
+
 from __future__ import annotations
 
 import json
@@ -54,11 +55,7 @@ class FpsMeter:
         return iv[i]
 
     def summary(self) -> dict:
-        dur = (
-            self._last - self._start_measure
-            if (self._last is not None and self._start_measure is not None)
-            else 0.0
-        )
+        dur = self._last - self._start_measure if (self._last is not None and self._start_measure is not None) else 0.0
         fps = self._count_measure / dur if dur > 0 else 0.0
         secs = sorted(self._per_sec.values())
         return {

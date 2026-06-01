@@ -77,15 +77,6 @@ print(buf2.meta)
 }
 ```
 
-## 与现有 stub（JSON IPC）的关系
-
-仓库中已有 `gpu_shared_stub.py` 提供的 JSON 方案（`export_to_ipc_json`/`import_from_ipc_json`）用于可读性更强的调试。本实现着重“自包含 + base64”传输友好：
-
-- JSON IPC：适合日志/调试/肉眼观测；字段可读，但内含的 CUDA Tensor 仍以 base64 化的 pickled 负载出现。
-- Base64 Pickle（本实现）：一个字符串包含所有数据；接收方无需导入 stub 模块，仅需 `pickle` 和 `torch` 即可还原。
-
-二者都保留了 CUDA IPC 的零拷贝特性。
-
 ## 生命周期与安全注意事项
 
 - CUDA IPC 生命周期：导出方必须在所有消费者使用期间维持源 `torch.Tensor` 存活并在同一计算环境/设备可见范围内。删除原 Tensor 或释放对应 CUDA 上下文会导致接收方访问失效。

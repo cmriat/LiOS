@@ -3,6 +3,7 @@
 
 Env: ROOM SIGNAL_URL STUN TURN W H FPS BITRATE_KBPS CLIP PEER_ID
 """
+
 import asyncio
 import os
 import threading
@@ -20,7 +21,7 @@ from gst_webrtc.sender import WebRTCSender  # noqa: E402
 
 ROOM = os.environ.get("ROOM", "bench")
 SIGNAL_URL = os.environ.get("SIGNAL_URL", "ws://127.0.0.1:18080/ws")
-STUN = os.environ.get("STUN", "stun://stun.example.com")
+STUN = os.environ.get("STUN", "stun://stun.l.google.com:19302")
 TURN = os.environ.get("TURN", "turn://USERNAME:PASSWORD@TURN_HOST:3478?transport=udp")
 W = int(os.environ.get("W", 640))
 H = int(os.environ.get("H", 480))
@@ -64,7 +65,7 @@ def _start_push(appsrc) -> threading.Thread:
         i = 0
         while True:
             off = (i % nfr) * FSZ
-            buf = Gst.Buffer.new_wrapped(data[off:off + FSZ])
+            buf = Gst.Buffer.new_wrapped(data[off : off + FSZ])
             buf.pts = i * period_ns
             buf.duration = period_ns
             ret = appsrc.emit("push-buffer", buf)
@@ -72,7 +73,7 @@ def _start_push(appsrc) -> threading.Thread:
                 break
             i += 1
             if i % 500 == 0:
-                print(f"[clip-sender] pushed {i}, {i/(time.time()-t0):.0f} push-fps (target {FPS})", flush=True)
+                print(f"[clip-sender] pushed {i}, {i / (time.time() - t0):.0f} push-fps (target {FPS})", flush=True)
             nxt += period
             dt = nxt - time.time()
             if dt > 0:
@@ -86,11 +87,13 @@ def _start_push(appsrc) -> threading.Thread:
 sender = WebRTCSender(ROOM, PEER_ID, SIGNAL_URL, STUN, TURN)
 h = sender.add_video_source_desc(_desc("cam0", APPSRC))
 appsrc = h.bin.get_by_name(APPSRC)
-appsrc.set_property("caps", Gst.Caps.from_string(
-    f"video/x-raw,format=I420,width={W},height={H},framerate={FPS}/1"))
+appsrc.set_property("caps", Gst.Caps.from_string(f"video/x-raw,format=I420,width={W},height={H},framerate={FPS}/1"))
 appsrc.set_property("max-buffers", 4)
 appsrc.set_property("leaky-type", 2)
 appsrc.set_property("block", False)
 _start_push(appsrc)
-print(f"[clip-sender] {W}x{H}@{FPS} br={BR}kbps clip={CLIP} nfr={os.path.getsize(CLIP)//FSZ} -> {SIGNAL_URL}", flush=True)
+print(
+    f"[clip-sender] {W}x{H}@{FPS} br={BR}kbps clip={CLIP} nfr={os.path.getsize(CLIP) // FSZ} -> {SIGNAL_URL}",
+    flush=True,
+)
 asyncio.run(sender.run())

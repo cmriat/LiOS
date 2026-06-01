@@ -8,6 +8,7 @@ Run in the optional `livekit` pixi env:
   pixi run -e livekit python benchmark/livekit_sender_ts.py
 Env: LK_URL, LK_KEY, LK_SECRET, LK_ROOM, W, H, FPS, DURATION
 """
+
 import asyncio
 import os
 import time

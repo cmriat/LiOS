@@ -73,10 +73,10 @@ cp .env.example .env   # examples auto-load .env; the default config needs no re
 cd signal-server && go build -o webrtcssvr . && ./webrtcssvr serve --addr :18080
 
 # 2) start the sender (edge GPU). Default VIDEO_SOURCE=test uses videotestsrc (no camera).
-pixi run python examples/two_cemera_sender.py
+pixi run python examples/two_camera_sender.py
 
 # 3) start the receiver (cloud GPU: decode → CUDA → InferenceBufferV2)
-pixi run python examples/two_cemera_receiver_inferbuf.py --streams 2
+pixi run python examples/two_camera_receiver_inferbuf.py --streams 2
 
 # 4) watch the live preview in a browser (the receiver serves it automatically)
 #    http://127.0.0.1:5082/api/v1/preview          (MJPEG stream)

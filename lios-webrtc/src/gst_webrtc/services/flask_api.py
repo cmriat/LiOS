@@ -12,7 +12,7 @@ Purpose
 
 Key endpoint (initial)
 ----------------------
-- GET /api/v1/inference/buffer/base64
+- GET /api/v1/infer-buffer/base64
   Returns a base64 string that can be decoded via:
     `pickle.loads(base64.b64decode(body))`
 
@@ -168,6 +168,7 @@ def _create_app(provider: InferenceBufferProvider) -> Flask:
 
         def gen():
             import time
+
             while True:
                 data = _latest_jpeg(prov, cam)
                 if data is not None:
@@ -246,4 +247,3 @@ class APIServer:
         self._thread.shutdown()
         self._thread.join(timeout=3.0)
         self._thread = None
-

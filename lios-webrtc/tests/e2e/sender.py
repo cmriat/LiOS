@@ -14,10 +14,8 @@ from gst_webrtc.sender import WebRTCSender
 
 ROOM = os.environ.get("ROOM", "demo")
 SIGNAL_URL = os.environ.get("SIGNAL_URL", "ws://127.0.0.1:18080/ws")
-STUN = os.environ.get("STUN", "stun://stun.example.com")
-TURN = os.environ.get(
-    "TURN", "turn://USERNAME:PASSWORD@TURN_HOST:3478?transport=udp"
-)
+STUN = os.environ.get("STUN", "stun://stun.l.google.com:19302")
+TURN = os.environ.get("TURN", "turn://USERNAME:PASSWORD@TURN_HOST:3478?transport=udp")
 
 init_gst()
 
@@ -109,7 +107,9 @@ h0 = sender.add_video_source_desc(create_realsense_appsrc_desc("cam0", RS_APPSRC
 
 # Tune the appsrc for a live source and wire the camera capture thread to it.
 appsrc0 = h0.bin.get_by_name(RS_APPSRC)
-appsrc0.set_property("caps", Gst.Caps.from_string(f"video/x-raw,format=RGB,width={RS_W},height={RS_H},framerate={RS_FPS}/1"))
+appsrc0.set_property(
+    "caps", Gst.Caps.from_string(f"video/x-raw,format=RGB,width={RS_W},height={RS_H},framerate={RS_FPS}/1")
+)
 appsrc0.set_property("max-buffers", 4)
 appsrc0.set_property("leaky-type", 2)  # downstream: drop oldest when full
 appsrc0.set_property("block", False)

@@ -6,6 +6,7 @@ each audio buffer carry the sender's monotonic time in nanoseconds.
 Usage (envs):
   DEST_HOST=127.0.0.1 DEST_PORT=5004 python benchmark/rtp_latency/rtp_latency_sender.py
 """
+
 import asyncio
 import os
 import time
@@ -54,7 +55,7 @@ async def main():
             if not ok:
                 raise RuntimeError("Failed to map buffer for write")
             try:
-                mapinfo.data[: bytes_per_packet] = data
+                mapinfo.data[:bytes_per_packet] = data
             finally:
                 buf.unmap(mapinfo)
             # Set timing metadata for completeness
@@ -73,4 +74,3 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
-

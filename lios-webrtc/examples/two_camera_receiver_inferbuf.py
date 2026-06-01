@@ -8,9 +8,9 @@ Usage
   Config is auto-loaded via gst_webrtc.load_env() (env vars still win).
 - Start signaling server (see project docs).
 - Start the sender:
-    pixi run python examples/two_cemera_sender.py
+    pixi run python examples/two_camera_sender.py
 - Start this receiver:
-    pixi run python examples/two_cemera_receiver_inferbuf.py --streams 2
+    pixi run python examples/two_camera_receiver_inferbuf.py --streams 2
 
 Notes
 -----
@@ -89,6 +89,7 @@ def _resize_with_pad_pil(image: Image.Image, height: int, width: int, method: in
     assert zero_image.size == (width, height)
     return zero_image
 
+
 def relax_rtp_tolerance(receiver: WebRTCReceiver):
     webrtc = receiver.webrtc
     rtpbin = None
@@ -108,7 +109,8 @@ def relax_rtp_tolerance(receiver: WebRTCReceiver):
             while True:
                 res, elem = it.next()
                 if res == Gst.IteratorResult.OK and elem.get_name() == "rtpbin":
-                    rtpbin = elem; break
+                    rtpbin = elem
+                    break
                 if res != Gst.IteratorResult.OK:
                     break
         except Exception:
@@ -117,32 +119,37 @@ def relax_rtp_tolerance(receiver: WebRTCReceiver):
             it = None
 
     if not rtpbin:
-        print("[tune] rtpbin not found"); return
+        print("[tune] rtpbin not found")
+        return
 
     # On SSRC validation, drop probation to 1 and widen misorder/dropout windows.
     session = rtpbin.emit("get-internal-session", 0)  # WebRTC/BUNDLE uses session 0
     if session:
+
         def on_validated(_session, src, *a):
             try:
-                src.set_property("probation", 1)             # accept after 1 packet
-                src.set_property("max-misorder-time", 4000)   # larger reorder window (ms)
+                src.set_property("probation", 1)  # accept after 1 packet
+                src.set_property("max-misorder-time", 4000)  # larger reorder window (ms)
                 src.set_property("max-dropout-time", 120000)  # larger dropout tolerance (ms)
             except Exception as e:
                 print("[tune] set RTPSource props failed:", e)
+
         session.connect("on-ssrc-validated", on_validated)
 
     # Lower the jitterbuffer startup threshold each time one is created.
     def on_new_jbuf(_rtpbin, jbuf, session_id, ssrc, *a):
         try:
-            jbuf.set_property("faststart-min-packets", 1)     # dequeue after 1 packet
+            jbuf.set_property("faststart-min-packets", 1)  # dequeue after 1 packet
             jbuf.set_property("max-misorder-time", 4000)
             jbuf.set_property("max-dropout-time", 120000)
         except Exception as e:
             print("[tune] set jbuf props failed:", e)
+
     try:
         rtpbin.connect("new-jitterbuffer", on_new_jbuf)
     except Exception:
         pass
+
 
 def _rtp_h264_to_appsink_desc(appsink_name: str = "recv_app", to_format: str = "RGBA") -> str:
     """RTP H264 → RGBA → appsink (low-latency) with NV/CPU fallback.

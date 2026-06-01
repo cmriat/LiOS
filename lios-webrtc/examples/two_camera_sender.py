@@ -28,7 +28,7 @@ load_env()
 
 ROOM = os.environ.get("ROOM", "demo")
 SIGNAL_URL = os.environ.get("SIGNAL_URL", "ws://127.0.0.1:18080/ws")
-STUN = os.environ.get("STUN", "stun://stun.example.com")
+STUN = os.environ.get("STUN", "stun://stun.l.google.com:19302")
 TURN = os.environ.get("TURN", "turn://USERNAME:PASSWORD@TURN_HOST:3478?transport=udp")
 VIDEO_SOURCE = os.environ.get("VIDEO_SOURCE", "test")
 CAMERAS = os.environ.get("CAMERAS", "cam0,cam1")
@@ -50,8 +50,8 @@ NVENC = (
 )
 X264 = "x264enc tune=zerolatency speed-preset=veryfast key-int-max=30 bitrate=8000"
 RTP_TAIL = (
-    'h264parse config-interval=-1 ! video/x-h264,alignment=au ! '
-    'rtph264pay aggregate-mode=zero-latency pt=96 mtu=1200 ! '
+    "h264parse config-interval=-1 ! video/x-h264,alignment=au ! "
+    "rtph264pay aggregate-mode=zero-latency pt=96 mtu=1200 ! "
     'capsfilter caps="application/x-rtp,media=video,encoding-name=H264,payload=96,clock-rate=90000"'
 )
 
@@ -69,8 +69,7 @@ def _encode_chain() -> str:
     """convert → encode tail: GPU NVENC when available, else CPU x264."""
     if _use_nvenc():
         return (
-            f"videoconvert ! video/x-raw,format=NV12 ! {QUEUE} ! "
-            f"cudaupload ! video/x-raw(memory:CUDAMemory) ! {NVENC}"
+            f"videoconvert ! video/x-raw,format=NV12 ! {QUEUE} ! cudaupload ! video/x-raw(memory:CUDAMemory) ! {NVENC}"
         )
     return f"videoconvert ! video/x-raw,format=I420 ! {QUEUE} ! {X264}"
 

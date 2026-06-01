@@ -84,10 +84,10 @@ Open three terminals on the same machine (all in the repo root). The default `.e
 cd signal-server && go build -o webrtcssvr . && ./webrtcssvr serve --addr :18080
 
 # Terminal 2 —— receiver (start first, wait for the stream)
-pixi run python examples/two_cemera_receiver_inferbuf.py --streams 2
+pixi run python examples/two_camera_receiver_inferbuf.py --streams 2
 
 # Terminal 3 —— sender (videotestsrc test pattern)
-pixi run python examples/two_cemera_sender.py
+pixi run python examples/two_camera_sender.py
 ```
 
 > If you'd rather not configure TURN on a single machine, leave the `TURN` placeholder in `.env`—localhost can usually connect directly via host candidates.
@@ -108,7 +108,7 @@ FLASK_HOST=0.0.0.0                      # set 0.0.0.0 to view the preview from a
 ```
 ```bash
 cd signal-server && go build -o webrtcssvr . && ./webrtcssvr serve --addr :18080   # terminal 1
-pixi run python examples/two_cemera_receiver_inferbuf.py --streams 2                # terminal 2
+pixi run python examples/two_camera_receiver_inferbuf.py --streams 2                # terminal 2
 ```
 
 **Machine A (edge): run sender**
@@ -120,7 +120,7 @@ TURN=turn://USER:PASS@TURN_HOST:3478?transport=udp
 VIDEO_SOURCE=test
 ```
 ```bash
-pixi run python examples/two_cemera_sender.py
+pixi run python examples/two_camera_sender.py
 ```
 
 **Two things that must be reachable across machines:**
@@ -225,13 +225,13 @@ the whole chain—including TURN—is working.
    WIDTH=640
    HEIGHT=480
    ```
-3. Start the sender: `pixi run python examples/two_cemera_sender.py`
+3. Start the sender: `pixi run python examples/two_camera_sender.py`
 
 **Things to watch out for:**
 - The stream names (`mid`/`left`) are passed to the receiver as the msid; the receiver uses them as the key for the inference buffer and also
   for selecting via `?cam=` in the HTTP preview.
 - The example's v4l2 pipeline requests `format=YUY2`. If your camera only supports MJPG/another format, this will fail;
-  you'll need to adjust the caps in `v4l2_source()` in `examples/two_cemera_sender.py` accordingly (change `format=YUY2`
+  you'll need to adjust the caps in `v4l2_source()` in `examples/two_camera_sender.py` accordingly (change `format=YUY2`
   to what the camera supports, or insert `jpegdec`).
 - The resolution/frame rate must be a combination the camera actually supports (confirm with `--list-formats-ext` above).
 
@@ -325,10 +325,10 @@ To debug pipeline details: add `GST_DEBUG=4` (or higher) on either end before st
 cd signal-server && go build -o webrtcssvr . && ./webrtcssvr serve --addr :18080
 
 # receiver (N streams, listening on 5082 on all interfaces so the preview is reachable remotely)
-FLASK_HOST=0.0.0.0 pixi run python examples/two_cemera_receiver_inferbuf.py --streams 2
+FLASK_HOST=0.0.0.0 pixi run python examples/two_camera_receiver_inferbuf.py --streams 2
 
 # sender (test pattern / real camera, decided by VIDEO_SOURCE in .env)
-pixi run python examples/two_cemera_sender.py
+pixi run python examples/two_camera_sender.py
 
 # watch the live feed in a browser
 #   http://<receiver IP>:5082/api/v1/preview

@@ -31,6 +31,7 @@ def make_receiver() -> WebRTCReceiver:
 
 # --------------------------- remote candidate ---------------------------
 
+
 def test_remote_candidate_buffered_before_remote_sdp():
     r = make_receiver()
     r._remote_sdp_set = False
@@ -67,6 +68,7 @@ def test_remote_candidate_none_is_ignored():
 
 # --------------------------- offer handling -----------------------------
 
+
 def test_handle_offer_missing_sdp_is_ignored(monkeypatch):
     r = make_receiver()
     calls = []
@@ -101,6 +103,7 @@ def test_handle_offer_flushes_pending_remote_ice(monkeypatch):
 
 
 # --------------------------- local candidate ----------------------------
+
 
 def test_local_candidate_buffered_until_remote_known():
     r = make_receiver()

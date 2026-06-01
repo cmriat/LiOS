@@ -66,16 +66,14 @@ class GpuFrameSink:
 
         Chooses nvcodec when available, otherwise CPU fallback.
         """
-        queue_cfg = (
-            "queue max-size-buffers=1 max-size-time=0 max-size-bytes=0 leaky=downstream"
-        )
+        queue_cfg = "queue max-size-buffers=1 max-size-time=0 max-size-bytes=0 leaky=downstream"
         tail = self.appsink_tail_desc()
         desc_nv = (
-            f"capsfilter caps=\"application/x-rtp\" ! rtph264depay ! h264parse ! "
+            f'capsfilter caps="application/x-rtp" ! rtph264depay ! h264parse ! '
             f"{queue_cfg} ! nvh264dec ! {queue_cfg} ! {tail}"
         )
         desc_cpu = (
-            f"capsfilter caps=\"application/x-rtp\" ! rtph264depay ! h264parse ! "
+            f'capsfilter caps="application/x-rtp" ! rtph264depay ! h264parse ! '
             f"{queue_cfg} ! avdec_h264 ! {queue_cfg} ! {tail}"
         )
         return desc_nv if self._is_nv_pipeline() else desc_cpu
@@ -85,9 +83,7 @@ class GpuFrameSink:
         # Prefer NVIDIA path when available; otherwise videoconvert fallback
         # Force a leaky queue right before appsink to ensure only latest frame is visible.
         # This protects appsink from backpressure and keeps latency low.
-        tail_queue_cfg = (
-            "queue max-size-buffers=1 max-size-time=0 max-size-bytes=0 leaky=downstream"
-        )
+        tail_queue_cfg = "queue max-size-buffers=1 max-size-time=0 max-size-bytes=0 leaky=downstream"
         if self._is_nv_pipeline():
             return (
                 f"nvvideoconvert ! video/x-raw,format={self.output_format} ! "
@@ -105,9 +101,7 @@ class GpuFrameSink:
         """Find appsink by name in `pipeline`, set props and connect callback."""
         sink = pipeline.get_by_name(self.name)
         if sink is None:
-            raise RuntimeError(
-                f"appsink '{self.name}' not found in pipeline; ensure bin added first"
-            )
+            raise RuntimeError(f"appsink '{self.name}' not found in pipeline; ensure bin added first")
         # Ensure properties (pipeline description already sets them, but be explicit)
         try:
             sink.set_property("emit-signals", True)

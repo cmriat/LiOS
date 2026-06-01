@@ -65,8 +65,8 @@ nvh264dec !
 
 类与方法
 - `class GpuFrameSink:`
-  - `__init__(self, name: str | None = None, output_format: str = "RGBA", queue_size: int = 4, drop_when_full: bool = True, copy_frame: bool = True)`
-    - 作用：配置 sink 名称、输出格式（`RGBA|RGB|BGR|GRAY8`）、内部队列容量、队列满时是否丢帧、是否在回调中 `copy()` 到独立内存。
+  - `__init__(self, name: str | None = None, output_format: str = "RGBA", queue_size: int = 4, drop_when_full: bool = True)`
+    - 作用：配置 sink 名称、输出格式（`RGBA|RGB|BGR|GRAY8`）、内部队列容量、队列满时是否丢帧。
     - 约定：`name` 若缺省，内部生成 UUID；用于从 pipeline 里 `get_by_name()` 找到 `appsink`。
 
   - `rtp_h264_sink_desc(self) -> str`

@@ -7,6 +7,7 @@ saturated ~700fps; the raw NVENC->NVDEC pipeline does ~2600fps).
 
 Env: ROOM, SIGNAL_URL, STUN, TURN, DURATION, WARMUP
 """
+
 import asyncio
 import os
 import sys
@@ -63,7 +64,10 @@ async def main() -> None:
             _dc["t0"] = time.time()
         _dc["n"] += 1
         if _dc["n"] % 500 == 0:
-            print(f"[gst-receiver] 真实进解码器 {_dc['n']}, {_dc['n']/(time.time()-_dc['t0']):.0f} pre-dec-fps", flush=True)
+            print(
+                f"[gst-receiver] 真实进解码器 {_dc['n']}, {_dc['n'] / (time.time() - _dc['t0']):.0f} pre-dec-fps",
+                flush=True,
+            )
         return Gst.PadProbeReturn.OK
 
     print(f"[gst-receiver] warmup={WARMUP}s measure={DURATION}s", flush=True)

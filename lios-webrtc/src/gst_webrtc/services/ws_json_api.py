@@ -260,7 +260,7 @@ class JSONWebSocketAPIServer:
                 if self._stop_event and self._stop_event.is_set():
                     break
 
-                await asyncio.sleep(0.001) # 1ms
+                await asyncio.sleep(0.001)  # 1ms
         except Exception as e:  # pragma: no cover - connection lifecycle
             log.debug("WS to-client closed: %s", e)
         finally:

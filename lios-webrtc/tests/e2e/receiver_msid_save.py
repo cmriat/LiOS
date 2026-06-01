@@ -19,6 +19,7 @@ import numpy as np
 
 try:
     from PIL import Image  # type: ignore
+
     _HAS_PIL = True
 except Exception:
     Image = None  # type: ignore
@@ -41,7 +42,7 @@ def _rtp_h264_to_appsink_desc(appsink_name: str = "recv_app", to_format: str = "
     q = "queue max-size-buffers=1 max-size-time=0 max-size-bytes=0 leaky=downstream"
     dec = f"avdec_h264 ! {q}"
     return (
-        f"capsfilter caps=\"application/x-rtp\" ! rtph264depay ! h264parse ! "
+        f'capsfilter caps="application/x-rtp" ! rtph264depay ! h264parse ! '
         f"{dec} ! videoconvert ! video/x-raw,format={to_format} ! {q} ! "
         f"appsink name={appsink_name} emit-signals=true sync=false max-buffers=1 drop=true"
     )
@@ -85,7 +86,9 @@ async def main(frames: int, out_dir: Path, streams: int, timeout: float = 8.0, w
     receiver.set_rtp_sink_desc(_rtp_h264_to_appsink_desc())
 
     out_dir.mkdir(parents=True, exist_ok=True)
-    print(f"[receiver-msid] expecting {streams} stream(s); warmup {warmup}s then saving {frames} frame(s) each → {out_dir}")
+    print(
+        f"[receiver-msid] expecting {streams} stream(s); warmup {warmup}s then saving {frames} frame(s) each → {out_dir}"
+    )
 
     # Start receiver loop
     recv_task = asyncio.create_task(receiver.run())
@@ -93,6 +96,7 @@ async def main(frames: int, out_dir: Path, streams: int, timeout: float = 8.0, w
     # Discover msid-renamed appsinks recursively
     sinks: Dict[str, Gst.Element] = {}
     deadline = asyncio.get_event_loop().time() + timeout
+
     def _collect(container: Gst.Bin) -> None:
         it = container.iterate_recurse()
         try:

@@ -39,7 +39,6 @@ tracedir
 build/
 
 *.ipynb
-signal-server/signalsrv
 signal-server/webrtcssvr
 mutagen.yml
 mutagen.yml.lock

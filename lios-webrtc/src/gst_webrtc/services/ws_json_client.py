@@ -161,7 +161,10 @@ class JSONWebSocketClient:
                         if item is not _QueueEmpty:
                             await ws.send(json.dumps(item))
                             continue
-                        if self.upstream_heartbeat_interval and (time.monotonic() - last_hb) >= self.upstream_heartbeat_interval:
+                        if (
+                            self.upstream_heartbeat_interval
+                            and (time.monotonic() - last_hb) >= self.upstream_heartbeat_interval
+                        ):
                             await ws.send(json.dumps({"type": "ka", "ts": time.time()}))
                             last_hb = time.monotonic()
                         await asyncio.sleep(0.05)
@@ -236,6 +239,7 @@ def _client_proc_entry(
         pass
     finally:
         client.stop()
+
 
 # --- process wrapper ---
 def spawn_json_ws_client_process(

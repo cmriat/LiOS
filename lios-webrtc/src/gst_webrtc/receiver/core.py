@@ -35,10 +35,8 @@ class WebRTCReceiver:
         self.room = room or os.environ.get("ROOM", "demo")
         self.peer_id = peer_id or os.environ.get("PEER_ID", f"receiver-{os.getpid()}")
         self.signal_url = signal_url or os.environ.get("SIGNAL_URL", "ws://127.0.0.1:18080/ws")
-        self.stun = stun or os.environ.get("STUN", "stun://stun.example.com")
-        self.turn = turn or os.environ.get(
-            "TURN", "turn://USERNAME:PASSWORD@TURN_HOST:3478?transport=udp"
-        )
+        self.stun = stun or os.environ.get("STUN", "stun://stun.l.google.com:19302")
+        self.turn = turn or os.environ.get("TURN", "turn://USERNAME:PASSWORD@TURN_HOST:3478?transport=udp")
         self.latency_ms = latency_ms
 
         # Runtime state
@@ -204,9 +202,7 @@ class WebRTCReceiver:
 
         desc = self.rtp_sink_desc
         if msid:
-            desc, n = re.subn(
-                r'(appsink\s+name=)\S+', rf'\g<1>{msid}', desc, count=1
-            )
+            desc, n = re.subn(r"(appsink\s+name=)\S+", rf"\g<1>{msid}", desc, count=1)
             if n == 0:
                 print(f"[receiver] WARN: no 'appsink name=' in desc; cannot bind msid {msid}")
 

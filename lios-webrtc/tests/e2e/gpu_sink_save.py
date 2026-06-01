@@ -18,6 +18,7 @@ import numpy as np
 
 try:
     from PIL import Image  # type: ignore
+
     _HAS_PIL = True
 except Exception:
     Image = None  # type: ignore
@@ -121,9 +122,7 @@ async def main(nframes: int, out_dir: Path, out_fmt: str, timeout: float) -> Non
                 img.save(fn)
             else:
                 if saved == 0:
-                    print(
-                        "[gpu-sink-test] PIL not available; install with 'pip install pillow' to save images"
-                    )
+                    print("[gpu-sink-test] PIL not available; install with 'pip install pillow' to save images")
             saved += 1
     finally:
         # Teardown
@@ -144,4 +143,3 @@ async def main(nframes: int, out_dir: Path, out_fmt: str, timeout: float) -> Non
 if __name__ == "__main__":
     args = parse_args()
     asyncio.run(main(args.frames, Path(args.out), args.format, args.timeout))
-

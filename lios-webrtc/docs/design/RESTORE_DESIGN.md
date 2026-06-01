@@ -1,6 +1,6 @@
 # WebRTC 断流恢复设计（通用策略）
 
-> sender 侧的具体落地实现见 [`src/gst_webrtc/sender/RECONNECT_DESIGN.md`](../../src/gst_webrtc/sender/RECONNECT_DESIGN.md)。
+> sender 侧的落地实现见 [`src/gst_webrtc/sender/core.py`](../../src/gst_webrtc/sender/core.py)（`_on_ice_state` / `_restart_ice` / `_full_reset_webrtc`）。
 
 下面给你一套**在 GStreamer webrtcbin + 自建信令**环境下，针对“网络抖动 / 断流后重启失败”的**分层恢复策略 + 事件驱动流程**。内容包含：什么时候需要重新协商 (O/A)、什么时候需要 ICE 重启、on-ice-candidate 的使用、信令该传什么以及严格的时序顺序；并给出 Python(gst-python) 的事件处理骨架。
 

@@ -6,6 +6,7 @@ Env: W H FRAMES CLIP
 Run: pixi run python benchmark/throughput/gen_clip.py
 布局: 每帧 = Y(W*H) + U(W/2*H/2) + V(W/2*H/2), 顺序写入。
 """
+
 import os
 import numpy as np
 
@@ -16,15 +17,17 @@ OUT = os.environ.get("CLIP", "/tmp/clip_i420.raw")
 
 rng = np.random.default_rng(42)
 yy, xx = np.mgrid[0:H, 0:W].astype(np.float32)
-yc, xc = np.mgrid[0:H // 2, 0:W // 2].astype(np.float32)
+yc, xc = np.mgrid[0 : H // 2, 0 : W // 2].astype(np.float32)
 
 with open(OUT, "wb") as f:
     for n in range(N):
         ph = n * 0.20  # 运动相位
-        Y = (128
-             + 50 * np.sin(xx / 17.0 + ph)
-             + 40 * np.cos(yy / 13.0 - ph * 0.7)
-             + 30 * np.sin((xx + yy) / 29.0 + ph * 1.3))
+        Y = (
+            128
+            + 50 * np.sin(xx / 17.0 + ph)
+            + 40 * np.cos(yy / 13.0 - ph * 0.7)
+            + 30 * np.sin((xx + yy) / 29.0 + ph * 1.3)
+        )
         Y += rng.normal(0, 6, (H, W))  # 适度噪声 -> 真实熵, 编码器不能压成 0
         U = 128 + 30 * np.sin(xc / 20.0 + ph * 0.5)
         V = 128 + 30 * np.cos(yc / 20.0 - ph * 0.5)
@@ -32,4 +35,4 @@ with open(OUT, "wb") as f:
             f.write(np.clip(plane, 0, 255).astype(np.uint8).tobytes())
 
 size = os.path.getsize(OUT)
-print(f"wrote {OUT}: {N} frames {W}x{H} I420, {size/1e6:.1f} MB, {size//N} B/frame")
+print(f"wrote {OUT}: {N} frames {W}x{H} I420, {size / 1e6:.1f} MB, {size // N} B/frame")
