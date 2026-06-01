@@ -1,7 +1,7 @@
 <div align="center">
   <img alt="LiOS" src="logo/LiOS_logo.png" height="120">
 
-  <h1>LiOS</h1>
+  <h1>lios-webrtc</h1>
 
   <p><em>Low-latency, GPU-accelerated edge→cloud image transport for robot inference</em></p>
 
@@ -17,15 +17,10 @@
 
 ---
 
-LiOS advances embodied AI from *ad-hoc system integration* toward **OS-level unified
-infrastructure**, supporting the continuous iteration of robot-manipulation models across
-cloud, edge, and cloud-edge collaboration. This repository is its **image-transport
-component** — a **low-latency visual data path** built for *robot inference*.
-
-Cloud-edge collaboration is the key to unlocking cloud compute: a robot in the field needs
-to reach the cloud over a **low-latency, computable** data stream. Multi-camera vision,
-robot state, action traces, and human-takeover signals flow into the cloud over
-**WebRTC / GStreamer**, powering online inference, rollout recording, and review.
+`lios-webrtc` is the **image-transport component** of the [LiOS](../README.md) embodied-AI
+stack — a **low-latency visual data path** built for *robot inference*. Multi-camera vision
+flows from the edge GPU into the cloud over **WebRTC / GStreamer**, powering online
+inference, rollout recording, and review.
 
 > **Unlike general-purpose real-time A/V frameworks built for *humans to watch*
 > (conferencing / streaming / collaboration SDKs): a general framework's endpoint is to
@@ -176,16 +171,3 @@ real-time control, the variance of the delivery interval matters more than the m
 This project is licensed under the [Apache License 2.0](LICENSE).
 
 ---
-
-## Citation
-
-If this project helps your research or product, please cite:
-
-```bibtex
-@software{lios,
-  title  = {LiOS: GPU-accelerated edge-to-cloud video transport for robot inference},
-  author = {LiOS Authors},
-  year   = {2026},
-  url    = {https://github.com/cmriat/LiOS}
-}
-```

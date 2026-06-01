@@ -1,7 +1,7 @@
 [workspace]
 authors = ["GST"]
 channels = ["https://repo.prefix.dev/meta-forge", "conda-forge"]
-name = "gst"
+name = "lios-webrtc"
 platforms = ["linux-64"]
 version = "0.1.0"
 

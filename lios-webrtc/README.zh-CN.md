@@ -1,7 +1,7 @@
 <div align="center">
   <img alt="LiOS" src="logo/LiOS_logo.png" height="120">
 
-  <h1>LiOS</h1>
+  <h1>lios-webrtc</h1>
 
   <p><em>面向机器人推理的低时延 · GPU 加速端云图传</em></p>
 
@@ -17,9 +17,7 @@
 
 ---
 
-LiOS 把具身智能从"分散的系统集成"推进到 **OS 级的统一基础设施**，在云侧、端侧与端云协同三层支撑具身操作模型的持续迭代。本仓库是其中的**图传组件**——一条为"机器人推理"而生的**低时延视觉数据通路**。
-
-端云协同是释放云端算力的关键：真实机器人现场需要以**低延迟、可计算**的数据流接入云端。端侧多路相机视觉、机器人状态、动作过程与人工接管信号，通过 **WebRTC / GStreamer** 稳定进入云端，支撑在线推理、rollout 记录与运行复盘。
+`lios-webrtc` 是 [LiOS](../README.md) 具身智能基础设施栈的**图传组件**——一条为"机器人推理"而生的**低时延视觉数据通路**。端侧多路相机视觉经 **WebRTC / GStreamer** 稳定进入云端，支撑在线推理、rollout 记录与运行复盘。
 
 > **与面向"人观看"的通用实时音视频框架（会议 / 直播 / 协作 SDK）不同：通用框架的终点是把画面解码出来交给应用层或屏幕；LiOS 图传的终点，是把画面直接送到 GPU 上的模型（VLA / Policy）手里。**
 
@@ -137,16 +135,3 @@ pixi run python examples/two_cemera_receiver_inferbuf.py --streams 2
 本项目以 [Apache License 2.0](LICENSE) 开源。
 
 ---
-
-## 引用
-
-如果本项目对你的研究或产品有帮助，欢迎引用：
-
-```bibtex
-@software{lios,
-  title  = {LiOS: GPU-accelerated edge-to-cloud video transport for robot inference},
-  author = {LiOS Authors},
-  year   = {2026},
-  url    = {https://github.com/cmriat/LiOS}
-}
-```
