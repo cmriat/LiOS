@@ -1,62 +1,12 @@
-# pixi environments
-.pixi
-*.egg-info
+# Root-level ignores. The subproject's own .gitignore lives at lios-webrtc/.gitignore.
 
-# development
-dev
-_ign_**
+# Orphaned local caches that pre-date the restructure — regenerated inside
+# lios-webrtc/ when you cd in. Safe to delete at the repo root.
+.pixi/
+.pytest_cache/
+.ruff_cache/
 
-# vscode
-.vscode
-
-# cache
-**/__pycache__
-**/.ipynb_checkpoints
-
-.envrc
-.env
-.env.*
-!.env.example
-.lazy.lua
-
-wandb
-
-**/output/
-
-.serena/cache
-
-.claude/*.local.*
-
-tl_out
-*.err
-*.out
-tracedir
-
-.rsync_exclude
-.lazy.lua
-.envrc
-
-build/
-
-*.ipynb
-signal-server/signalsrv
-signal-server/webrtcssvr
-mutagen.yml
-mutagen.yml.lock
-repo.xml
-
-# generated images / benchmark & verification artifacts
-outputs/
-
-# Rust build artifacts (1.6G+; regenerable via cargo build)
-target/
-
-# benchmark result data (regenerable measurements, not source)
-benchmark/relat_results/
-benchmark/**/*.log
-
-# certificates — never commit certs into the repo
-*.crt
-
-# spec-workflow MCP tooling state
-.spec-workflow/
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
