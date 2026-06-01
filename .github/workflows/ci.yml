@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+
+jobs:
+  lint:
+    name: ruff lint
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: lios-webrtc
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install ruff==0.15.14
+      - run: ruff check src tests
+
+  test:
+    name: unit tests (CPU)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: lios-webrtc
+    steps:
+      - uses: actions/checkout@v4
+      # CPU-only pixi environment `ci` (no CUDA) — same GStreamer 1.26 as local,
+      # so the gi-dependent sender/receiver/gpu_sink logic tests run instead of
+      # skipping. gpu-marked cases still auto-skip (no NVIDIA on the runner).
+      - uses: prefix-dev/setup-pixi@v0.8.1
+        with:
+          environments: ci
+          manifest-path: lios-webrtc/pixi.toml
+      - run: pixi run -e ci pytest -m "not gpu" -v
+
+  go-build:
+    name: signal-server build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: lios-webrtc/signal-server/go.mod
+      - name: Build
+        working-directory: lios-webrtc/signal-server
+        run: go build -o webrtcssvr .

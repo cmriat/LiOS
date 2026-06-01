@@ -1,0 +1,12 @@
+# Root-level ignores. The subproject's own .gitignore lives at lios-webrtc/.gitignore.
+
+# Orphaned local caches that pre-date the restructure — regenerated inside
+# lios-webrtc/ when you cd in. Safe to delete at the repo root.
+.pixi/
+.pytest_cache/
+.ruff_cache/
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/

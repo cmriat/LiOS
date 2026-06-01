@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Architecture & design
+    url: https://github.com/cmriat/LiOS/blob/main/design.md
+    about: Component architecture and module responsibilities.
+  - name: Documentation & benchmarks
+    url: https://github.com/cmriat/LiOS/tree/main/docs
+    about: Usage docs and the image-transport performance report.

@@ -1,0 +1,9 @@
+[package]
+name = "lk_rust"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+futures = "0.3.32"
+livekit = "0.7.42"
+tokio = { version = "1.52.3", features = ["rt-multi-thread", "macros", "time"] }
