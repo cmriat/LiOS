@@ -1,0 +1,52 @@
+name: Tests
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: tests-${{ github.workflow }}-${{ github.ref == 'refs/heads/main' && github.run_number || github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash -l -eo pipefail {0}
+
+jobs:
+  pytest-cpu:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install CPU PyTorch
+        run: |
+          python -m pip install --upgrade pip
+          pip install --index-url https://download.pytorch.org/whl/cpu torch torchvision
+
+      - name: Install LeRobot (pinned)
+        run: |
+          pip install git+https://github.com/huggingface/lerobot.git@0cf864870cf29f4738d3ade893e6fd13fbd7cdb5
+
+      - name: Install runtime deps for pi.data / pi.models_pytorch
+        run: |
+          pip install \
+            'transformers==4.55.0' \
+            pytest pillow einops sentencepiece \
+            pydantic numpydantic tyro etils universal-pathlib \
+            sortedcontainers absl-py msgspec safetensors
+
+      - name: Install pi (editable)
+        run: pip install --no-deps -e .
+
+      - name: Run CPU tests
+        run: pytest -q tests/test_attention_masks.py tests/test_data_transforms.py

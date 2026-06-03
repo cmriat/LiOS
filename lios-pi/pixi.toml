@@ -1,0 +1,136 @@
+[workspace]
+channels = [
+  # Hosted on Baidu BOS, maintained by cmriat. Public read, no credentials
+  # required. Serves CUDA builds of pytorch / flash-attn / transformer-engine
+  # and the MoE kernels (deepep / deepgemm / grouped-gemm / liger-kernel) that
+  # are not on conda-forge.
+  "https://srgconda.bj.bcebos.com/",
+  "https://prefix.dev/meta-forge",
+  "conda-forge",
+]
+name = "lios-pi"
+platforms = ["linux-64"]
+version = "0.1.0"
+
+[tasks]
+typecheck = "pyright src"
+
+# lerobot is installed via this task rather than via [pypi-dependencies] because
+# pixi has no equivalent of pip's `--no-deps` flag: declaring lerobot as a pypi
+# dependency would force pixi to re-resolve its full transitive tree against the
+# conda env and conflict with the CUDA pytorch already pinned in [dependencies].
+# Run after `pixi install`:  pixi run -e dev lerobot
+#
+# GIT_LFS_SKIP_SMUDGE=1 keeps the lerobot clone from pulling its LFS test
+# fixtures and from failing on hosts that do not have git-lfs installed.
+[tasks.lerobot]
+cmd = "pip install --no-deps git+https://github.com/huggingface/lerobot.git@0cf864870cf29f4738d3ade893e6fd13fbd7cdb5"
+env = { GIT_LFS_SKIP_SMUDGE = "1" }
+
+[system-requirements]
+cuda = "12.9"
+libc = { family = "glibc", version = "2.34" }
+
+[activation.env]
+"TORCH_CUDA_ARCH_LIST" = "9.0"
+"CUDA_HOME" = "$CONDA_PREFIX"
+"WANDB_DIR" = "$HOME/wandb"
+
+[dependencies]
+python = "3.12.*"
+pytorch = { version = "*", build = "*cuda*" }
+tyro = ">=0.9.25,<0.10"
+wandb = "*"
+transformers = "==4.55.0"
+universal-pathlib = "*"
+datasets = "3.6.0.*"
+pip = "*"
+cuda-libraries-dev = "*"
+cusparselt = "*"
+ipynb-py-convert = ">=0.4.6,<0.5"
+absl-py = ">=2.2.0,<3"
+sortedcontainers = ">=2.4.0,<3"
+matplotlib = "*"
+cloudpickle = "*"
+accelerate = "*"
+transformer-engine = "*"
+nvtx = "*"
+sentencepiece = ">=0.2.0,<0.3"
+numpydantic = ">=1.6.11,<2"
+etils = ">=1.12.2,<2"
+importlib_resources = ">=6.5.2,<7"
+rerun-sdk = "0.21.0.*"
+evdev = "<1.8"
+pytest = "*"
+gcsfs = "*"
+ffmpeg = "*"
+jupyterlab-lsp = "*"
+python-lsp-server = "*"
+jupyterlab = "*"
+ipywidgets = "*"
+jupyterlab_execute_time = "*"
+posix_ipc = "*"
+websockets = "*"
+plotly = "*"
+
+jsonlines = "*"
+torchvision = "*"
+draccus = "==0.10.0"
+av = ">=14.2.0"
+pylance = {version = "*", channel = "conda-forge" }
+boto3 = "*"
+backoff = "*"
+
+[pypi-dependencies]
+pi = { path = ".", editable = true }
+tqdm_loggable = ">=0.2, <0.3"
+#lerobot = { git = "https://github.com/huggingface/lerobot", rev = "0cf864870cf29f4738d3ade893e6fd13fbd7cdb5" }
+lmdb = "*"
+msgspec = "*"
+# lerobot = "==0.1.0"
+
+graphviz = "*"
+torchcodec = "*"
+
+[feature.dev.dependencies]
+ipywidgets = "*"
+pre-commit = "*"
+ruff = "*"
+jupyterlab = ">=4.4.1,<5"
+pytest-asyncio = "*"
+pytest-profiling = ">=1.8.1,<2"
+line_profiler = ">=4.2.0,<5"
+pytest-xdist = ">=3.7.0,<4"
+pytest-mock = "*"
+torch-tb-profiler = ">=0.4.3,<0.5"
+jupytext = ">=1.17.3,<2"
+
+
+torchtitan = "==2025.7.2"
+torchao = "*"
+tyro = ">=0.9.25,<0.10"
+wandb = "*"
+datasets = "*"
+cuda-libraries-dev = "*"
+cusparselt = "*"
+flash-attn = "*"
+flash-attn-3 = "*"
+absl-py = ">=2.2.0,<3"
+sortedcontainers = ">=2.4.0,<3"
+matplotlib = ">=3.10.1,<4"
+cloudpickle = "*"
+accelerate = "*"
+deepgemm = "==2025.7.2"
+deepep = "*"
+grouped-gemm = "*"
+transformer-engine = "*"
+nvtx = "*"
+jaxtyping = ">=0.3.2,<0.4"
+liger-kernel = "*"
+
+[feature.dev.pypi-dependencies]
+neopyter = "*"
+tlparse = "*"
+
+[environments]
+dev = { features = ["dev"], solve-group = "default" }
