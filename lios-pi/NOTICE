@@ -1,0 +1,37 @@
+lios-pi
+Copyright 2025 cmriat and the LiOS contributors
+
+This product includes software adapted from the following projects.
+
+------------------------------------------------------------------------
+Physical Intelligence — openpi
+https://github.com/Physical-Intelligence/openpi
+Licensed under the Apache License, Version 2.0.
+
+Much of src/pi/ — the model definitions, transforms, data pipeline, and
+training utilities — is adapted from openpi. Files derived from openpi carry
+an "Adapted from Physical-Intelligence/openpi" header.
+
+------------------------------------------------------------------------
+HuggingFace — Transformers
+https://github.com/huggingface/transformers
+Copyright The HuggingFace Team. Licensed under the Apache License, Version 2.0.
+
+The Gemma, SigLIP, and PaliGemma modeling code under src/pi/models/ is adapted
+from Transformers, which in turn includes work Copyright Google Inc. The
+original copyright headers are retained in those files.
+
+------------------------------------------------------------------------
+PyTorch — torchtitan
+https://github.com/pytorch/torchtitan
+Licensed under the BSD 3-Clause License.
+
+Distributed-training utilities (FSDP wrapping, gradient clipping across device
+meshes, and the profiling context managers) are informed by torchtitan.
+
+------------------------------------------------------------------------
+HuggingFace — LeRobot
+https://github.com/huggingface/lerobot
+Licensed under the Apache License, Version 2.0.
+
+Used as the dataset backend for training and normalization statistics.
